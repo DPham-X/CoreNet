@@ -1,0 +1,33 @@
+devices:
+  - name: PE1
+    ip: 10.49.225.178
+    user: northstar
+    password: Juniper123!
+  - name: PE2
+    ip: 10.49.225.176
+    user: northstar
+    password: Juniper123!
+  - name: PE3
+    ip: 10.49.225.139
+    user: northstar
+    password: Juniper123!
+  - name: PE4
+    ip: 10.49.225.137
+    user: northstar
+    password: Juniper123!
+  - name: P1
+    ip: 10.49.227.129
+    user: northstar
+    password: Juniper123!
+  - name: P2
+    ip: 10.49.227.127
+    user: northstar
+    password: Juniper123!
+  - name: P3
+    ip: 10.49.225.241
+    user: northstar
+    password: Juniper123!
+  - name: jvm
+    ip: 10.49.227.134
+    user: root
+    password: Juniper123!
