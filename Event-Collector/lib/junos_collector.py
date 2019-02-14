@@ -3,13 +3,11 @@ import logging.config
 import sys
 import time
 import uuid
-import xml.etree.ElementTree as ET
 from datetime import datetime
 
 import yaml
 from jnpr.junos import Device
 from jnpr.junos.exception import ConnectError
-
 
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 logging.config.dictConfig({
@@ -21,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 class JunosCollector(object):
     def __init__(self, device_config):
+        """ Junos RPC information collector """
         self.connected_devices = {}
         self.network_devices = {}
 
@@ -35,12 +34,12 @@ class JunosCollector(object):
 
     def _import_network_devices(self, network_device_file):
         logger.debug('Loading network devices into JunosCollector')
-        with open(network_device_file, 'r') as file:
-            import_devices = yaml.load(file.read())
+        with open(network_device_file, 'r') as f:
+            import_devices = yaml.load(f.read())
 
         for device in import_devices['devices']:
             self.network_devices[device['name']] = device
-            logger.debug('Imported credentials for {}'.format(device['name']))
+            logger.debug('Imported credentials for %s', device['name'])
 
         for _, device in self.network_devices.items():
             self._connect_to_device(device)
@@ -51,12 +50,12 @@ class JunosCollector(object):
 
     def _get_device(self, hostname):
         try:
-            logger.debug('Connecting to {}'.format(hostname))
+            logger.debug('Connecting to %s', hostname)
             dev = self.connected_devices[hostname].open()
-            logger.debug('Successfully connected to {}'.format(hostname))
+            logger.debug('Successfully connected to %s', hostname)
         except ConnectError as e:
-            logger.error(e)
-            return
+            logger.error('%s', str(e))
+            raise ConnectError(e)
         return dev
 
     def get_interface_status(self):
@@ -88,7 +87,10 @@ class JunosCollector(object):
         self.interface_status = {
             'uuid': str(uuid.uuid4()),
             'time': str(datetime.now()),
-            'status': device_interface_statuses,
+            'name': 'Get interface status',
+            'type': 'CLI',
+            'priority': 'undefined',
+            'body': device_interface_statuses,
         }
 
 if __name__ == '__main__':
