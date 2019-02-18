@@ -1,3 +1,4 @@
+import json
 import logging
 import logging.config
 import sys
@@ -8,6 +9,8 @@ from datetime import datetime
 import yaml
 from jnpr.junos import Device
 from jnpr.junos.exception import ConnectError
+
+import requests
 
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 logging.config.dictConfig({
@@ -22,7 +25,7 @@ class JunosCollector(object):
         """ Junos RPC information collector """
         self.connected_devices = {}
         self.network_devices = {}
-
+        self.db_url = 'http://localhost:5000/create_event'
         self._import_network_devices(device_config)
 
     def start_monitoring(self):
@@ -30,7 +33,14 @@ class JunosCollector(object):
 
         while True:
             self.get_interface_status()
+            self.interfaces_to_monitor()
             time.sleep(30)
+
+    def add_event_to_db(self, event_msg):
+        headers = {
+            'Content-Type': 'application/json',
+        }
+        requests.post(self.db_url, json=event_msg, headers=headers)
 
     def _import_network_devices(self, network_device_file):
         logger.debug('Loading network devices into JunosCollector')
@@ -45,24 +55,21 @@ class JunosCollector(object):
             self._connect_to_device(device)
 
     def _connect_to_device(self, device):
-        dev = Device(host=device['ip'], user=device['user'], password=device['password'])
-        self.connected_devices[device['name']] = dev
-
-    def _get_device(self, hostname):
+        # TODO: wrap in error debugs
         try:
-            logger.debug('Connecting to %s', hostname)
-            dev = self.connected_devices[hostname].open()
-            logger.debug('Successfully connected to %s', hostname)
+            logger.debug('Connecting to %s', device['ip'])
+            dev = Device(host=device['ip'], user=device['user'], password=device['password']).open()
+            logger.info('Successfully connected to %s', device['ip'])
         except ConnectError as e:
             logger.error('%s', str(e))
             raise ConnectError(e)
-        return dev
+        else:
+            self.connected_devices[device['name']] = dev
 
     def get_interface_status(self):
         device_interface_statuses = {}
         rpc_replies = {}
-        for dev_name in self.connected_devices:
-            connected_dev = self._get_device(dev_name)
+        for dev_name, connected_dev in self.connected_devices.items():
             if connected_dev is None:
                 return
 
@@ -84,15 +91,45 @@ class JunosCollector(object):
                 }
             device_interface_statuses[dev_name] = interface_status
 
-        self.interface_status = {
-            'uuid': str(uuid.uuid4()),
-            'time': str(datetime.now()),
-            'name': 'Get interface status',
-            'type': 'CLI',
-            'priority': 'undefined',
-            'body': device_interface_statuses,
-        }
+        self.interface_status = device_interface_statuses
+
+    def interfaces_to_monitor(self):
+        to_monitor = ['ge-0/0/1']
+        for device_name, interfaces in self.interface_status.items():
+            oper_status_down = []
+            admin_status_down = []
+            for interface_name, interface in interfaces.items():
+                if interface_name not in to_monitor:
+                    continue
+                if interface['oper-status'] == 'down':
+                    oper_status_down.append(interface_name)
+                if interface['admin-status'] == 'down':
+                    admin_status_down.append(interface_name)
+
+            if oper_status_down:
+                event = {
+                    'uuid': str(uuid.uuid4()),
+                    'time': str(datetime.now()),
+                    'name': 'Monitored oper interface is down',
+                    'type': 'cli',
+                    'priority': 'critical',
+                    'body': {device_name: json.dumps(oper_status_down)},
+                }
+                self.add_event_to_db(event)
+                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
+
+            if admin_status_down:
+                event = {
+                    'uuid': str(uuid.uuid4()),
+                    'time': str(datetime.now()),
+                    'name': 'Monitored admin interface is down',
+                    'type': 'cli',
+                    'priority': 'critical',
+                    'body': {device_name: json.dumps(admin_status_down)},
+                }
+                self.add_event_to_db(event)
+                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
 if __name__ == '__main__':
-    jc = JunosCollector(device_config='config/devices.yaml')
+    jc = JunosCollector(device_config='../config/devices.yaml')
     jc.start_monitoring()
