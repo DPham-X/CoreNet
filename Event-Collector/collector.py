@@ -1,18 +1,34 @@
-from flask import Flask
-from flask_restful import Resource, Api
+import logging
+import sys
+import threading
+
 from lib.junos_collector import JunosCollector
 
-app = Flask(__name__)
-api = Api(app)
-js = JunosCollector()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
-class Junos(Resource):
-    def get(self):
-        interface_status = js.interface_status
-        print(interface_status)
-        return interface_status
+jc_logger = logging.getLogger('lib.junos_collector')
+jc_logger.setLevel(logging.DEBUG)
 
-api.add_resource(Junos, '/get_interface_status')
+handler = logging.StreamHandler()
+handler.setLevel(logging.DEBUG)
+
+jc_logger.addHandler(handler)
+logger.addHandler(handler)
+
+class Collector(object):
+    def __init__(self):
+        threads = []
+        jc_thread = threading.Thread(name='JunosCollector', target=JunosCollector, args=('config/devices.yaml',))
+        threads.append(jc_thread)
+
+        for thread in threads:
+            logger.info('Starting Thread: %s', thread.name)
+            thread.start()
+
+        for thread in threads:
+            logger.info('Joining Thread: %s', thread.name)
+            thread.join()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    Collector()

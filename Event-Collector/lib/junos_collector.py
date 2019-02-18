@@ -6,17 +6,11 @@ import time
 import uuid
 from datetime import datetime
 
+import requests
 import yaml
 from jnpr.junos import Device
 from jnpr.junos.exception import ConnectError
 
-import requests
-
-logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
-logging.config.dictConfig({
-    'version': 1,
-    'disable_existing_loggers': True,
-})
 logger = logging.getLogger(__name__)
 
 
@@ -27,6 +21,7 @@ class JunosCollector(object):
         self.network_devices = {}
         self.db_url = 'http://localhost:5000/create_event'
         self._import_network_devices(device_config)
+        self.start_monitoring()
 
     def start_monitoring(self):
         self.interface_status = {}
@@ -132,4 +127,3 @@ class JunosCollector(object):
 
 if __name__ == '__main__':
     jc = JunosCollector(device_config='../config/devices.yaml')
-    jc.start_monitoring()
