@@ -1,7 +1,90 @@
-- name: test1
+
+- name: P1 Interface Down
   events:
-    - Monitored oper interface is down
-    - Monitored admin interface is down
+    - oper_status.interface.down.P1
+    - admin_status.interface.down.P1
   commands:
-    - cli: show configuration interfaces
-    - northstar: Trigger optimisation
+    - cli:
+        cmd:
+        args:
+    - northstar:
+        cmd: Put device into maintenance
+        args: P1
+    - northstar:
+        cmd: Trigger optimisation
+        args: None
+
+- name: P1 Interface Up
+  events:
+    - oper_status.interface.up.P1
+    - admin_status.interface.up.P1
+  commands:
+    - cli:
+        cmd:
+        args:
+    - northstar:
+        cmd: Bring device online
+        args: P1
+    - northstar:
+        cmd: Trigger optimisation
+        args: None
+
+- name: P2 Interface Down
+  events:
+    - oper_status.interface.down.P2
+    - admin_status.interface.down.P2
+  commands:
+    - cli:
+        cmd:
+        args:
+    - northstar:
+        cmd: Put device into maintenance
+        args: P2
+    - northstar:
+        cmd: Trigger optimisation
+        args: None
+
+- name: P2 Interface Up
+  events:
+    - oper_status.interface.up.P2
+    - admin_status.interface.up.P2
+  commands:
+    - cli:
+        cmd:
+        args:
+    - northstar:
+        cmd: Bring device online
+        args: P2
+    - northstar:
+        cmd: Trigger optimisation
+        args: None
+
+- name: P3 Interface Down
+  events:
+    - oper_status.interface.down.P3
+    - admin_status.interface.down.P3
+  commands:
+    - cli:
+        cmd:
+        args:
+    - northstar:
+        cmd: Put device into maintenance
+        args: P3
+    - northstar:
+        cmd: Trigger optimisation
+        args: None
+
+- name: P3 Interface Up
+  events:
+    - oper_status.interface.up.P3
+    - admin_status.interface.up.P3
+  commands:
+    - cli:
+        cmd:
+        args:
+    - northstar:
+        cmd: Bring device online
+        args: P3
+    - northstar:
+        cmd: Trigger optimisation
+        args: None
