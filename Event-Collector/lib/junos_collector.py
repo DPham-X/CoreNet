@@ -27,8 +27,11 @@ class JunosCollector(object):
         self.interface_status = {}
 
         while True:
+            # Pre
             self.get_interface_status()
-            self.interfaces_to_monitor()
+            # Post
+            self.get_oper_status_down()
+            self.get_admin_status_down()
             time.sleep(30)
 
     def add_event_to_db(self, event_msg):
@@ -88,40 +91,64 @@ class JunosCollector(object):
 
         self.interface_status = device_interface_statuses
 
-    def interfaces_to_monitor(self):
+    def _create_event(self, name, type, priority, body):
+        event = {
+            'uuid': str(uuid.uuid4()),
+            'time': str(datetime.now().isoformat()),
+            'name': name,
+            'type': type,
+            'priority': priority,
+            'body': body,
+        }
+        return event
+
+    def get_oper_status_down(self):
         to_monitor = ['ge-0/0/1']
         for device_name, interfaces in self.interface_status.items():
-            oper_status_down = []
-            admin_status_down = []
+            oper_status = []
             for interface_name, interface in interfaces.items():
                 if interface_name not in to_monitor:
                     continue
                 if interface['oper-status'] == 'down':
-                    oper_status_down.append(interface_name)
-                if interface['admin-status'] == 'down':
-                    admin_status_down.append(interface_name)
+                    oper_status.append(interface_name)
 
-            if oper_status_down:
-                event = {
-                    'uuid': str(uuid.uuid4()),
-                    'time': str(datetime.now().isoformat()),
-                    'name': 'Monitored oper interface is down',
-                    'type': 'cli',
-                    'priority': 'critical',
-                    'body': {device_name: json.dumps(oper_status_down)},
-                }
+            if oper_status:
+                event = self._create_event(name='oper_status.interface.down.{}'.format(device_name),
+                                           type='cli',
+                                           priority='critical',
+                                           body={device_name: json.dumps(oper_status)})
+                self.add_event_to_db(event)
+                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
+            else:
+                event = self._create_event(name='oper_status.interface.up.{}'.format(device_name),
+                                           type='cli',
+                                           priority='critical',
+                                           body={device_name: json.dumps(oper_status)})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
-            if admin_status_down:
-                event = {
-                    'uuid': str(uuid.uuid4()),
-                    'time': str(datetime.now().isoformat()),
-                    'name': 'Monitored admin interface is down',
-                    'type': 'cli',
-                    'priority': 'critical',
-                    'body': {device_name: json.dumps(admin_status_down)},
-                }
+    def get_admin_status_down(self):
+        to_monitor = ['ge-0/0/1']
+        for device_name, interfaces in self.interface_status.items():
+            admin_status = []
+            for interface_name, interface in interfaces.items():
+                if interface_name not in to_monitor:
+                    continue
+                if interface['admin-status'] == 'down':
+                    admin_status.append(interface_name)
+
+            if admin_status:
+                event = self._create_event(name='admin_status.interface.down.{}'.format(device_name),
+                                           type='cli',
+                                           priority='critical',
+                                           body={device_name: json.dumps(admin_status)})
+                self.add_event_to_db(event)
+                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
+            else:
+                event = self._create_event(name='admin_status.interface.up.{}'.format(device_name),
+                                           type='cli',
+                                           priority='critical',
+                                           body={device_name: json.dumps(admin_status)})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
