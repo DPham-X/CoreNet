@@ -1,0 +1,7 @@
+- name: test1
+  events:
+    - Monitored oper interface is down
+    - Monitored admin interface is down
+  commands:
+    - cli: show configuration interfaces
+    - northstar: Trigger optimisation

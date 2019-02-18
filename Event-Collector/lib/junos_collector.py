@@ -104,7 +104,7 @@ class JunosCollector(object):
             if oper_status_down:
                 event = {
                     'uuid': str(uuid.uuid4()),
-                    'time': str(datetime.now()),
+                    'time': str(datetime.now().isoformat()),
                     'name': 'Monitored oper interface is down',
                     'type': 'cli',
                     'priority': 'critical',
@@ -116,7 +116,7 @@ class JunosCollector(object):
             if admin_status_down:
                 event = {
                     'uuid': str(uuid.uuid4()),
-                    'time': str(datetime.now()),
+                    'time': str(datetime.now().isoformat()),
                     'name': 'Monitored admin interface is down',
                     'type': 'cli',
                     'priority': 'critical',

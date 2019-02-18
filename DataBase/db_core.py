@@ -1,4 +1,4 @@
-from flask import Flask, json
+from flask import Flask, json, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Resource, Api, reqparse
 from glob import glob
@@ -171,6 +171,26 @@ class DBQuery(Resource):
             output.append(query_serialised)
         return output, 200
 
+class DBGetEvent(Resource):
+    def get(self):
+        start_time = request.args.get('start_time')
+        end_time = request.args.get('end_time')
+        if start_time is None:
+            return {'Error': 'start_time has not been defined'}, 400
+        if end_time is None:
+            return {'Error': 'end_time has not been defined'}, 400
+
+        queries = Event.query.filter(Event.time.between(start_time, end_time)).all()
+        if not queries:
+            return {'Error': 'Bad request'}, 400
+        output = []
+        for query in queries:
+            query_serialised = query.to_dict()
+            query_serialised['body'] = ast.literal_eval(query_serialised['body'])
+            output.append(query_serialised)
+        return output, 200
+
+
 def db_init(name):
     files = glob('*')
     if db_name not in files:
@@ -200,7 +220,7 @@ def add_event_to_db(event):
 
 api.add_resource(DBQuery, '/get_interface_status')
 api.add_resource(DBCreateEvent, '/create_event')
-
+api.add_resource(DBGetEvent, '/get_events')
 
 if __name__ == '__main__':
     db_name = 'core.db'
