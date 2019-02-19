@@ -23,7 +23,7 @@ class NorthstarTrigger(object):
         self._import_variables()
 
     def _import_variables(self):
-        with open('lib/auth.yaml') as file:
+        with open('config/auth.yaml') as file:
             imported_vars = yaml.load(file.read())
 
         self.base_url = 'https://{}:{}'.format(imported_vars['hostname'], imported_vars['port'])
@@ -221,7 +221,7 @@ class NorthstarTrigger(object):
         }
 
         logger.debug('Triggering path optimisation')
-        r = requests.post(path_optimisation_url, json='', headers=headers, verify=self.verify)
+        r = requests.request('POST', path_optimisation_url, data='', headers=headers, verify=self.verify)
         assert r.status_code == 200, r.status_code
         response = r.json()
         logger.info(response['result '])
@@ -262,9 +262,11 @@ class NorthstarTrigger(object):
         command = vars['cmd']
         args = vars['args']
 
-        if command == 'Trigger Optimisation':
+        if command == 'trigger.optimisation':
             self.trigger_path_optimisation()
-        elif command == 'Put device into maintenance':
+        elif command == 'create.device.maintenance':
             self.put_device_in_maintenance(args, 'maintenance_{}'.format(args))
-        elif command == 'Bring device online':
+        elif command == 'delete.device.maintenance':
             self.delete_maintenance('maintenance_{}'.format(args))
+        else:
+            logger.error('Undefined northstar command ... skipping - %s', command)
