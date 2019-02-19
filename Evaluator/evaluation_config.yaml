@@ -7,13 +7,15 @@
     - cli:
         cmd: show interfaces terse
         args: P1
+    - cli:
+        cmd: show log messages | match interface | last | no-more
+        args: P1
     - northstar:
         cmd: create.device.maintenance
         args: P1
     - northstar:
         cmd: trigger.optimisation
         args: None
-
 - name: P1 Interface Up
   events:
     - oper_status.interface.up.P1
@@ -28,7 +30,6 @@
     - northstar:
         cmd: trigger.optimisation
         args: None
-
 - name: P2 Interface Down
   events:
     - oper_status.interface.down.P2
@@ -37,13 +38,15 @@
     - cli:
         cmd: show interfaces terse
         args: P2
+    - cli:
+        cmd: show log messages | match interface | last | no-more
+        args: P1
     - northstar:
         cmd: create.device.maintenance
         args: P2
     - northstar:
         cmd: trigger.optimisation
         args: None
-
 - name: P2 Interface Up
   events:
     - oper_status.interface.up.P2
@@ -58,7 +61,6 @@
     - northstar:
         cmd: trigger.optimisation
         args: None
-
 - name: P3 Interface Down
   events:
     - oper_status.interface.down.P3
@@ -67,13 +69,15 @@
     - cli:
         cmd: show interfaces terse
         args: P3
+    - cli:
+        cmd: show log messages | match interface | last | no-more
+        args: P1
     - northstar:
         cmd: create.device.maintenance
         args: P3
     - northstar:
         cmd: trigger.optimisation
         args: None
-
 - name: P3 Interface Up
   events:
     - oper_status.interface.up.P3
