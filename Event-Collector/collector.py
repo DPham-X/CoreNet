@@ -1,20 +1,30 @@
+import ast
 import logging
 import sys
 import threading
 
+from flask import Flask, json, request
+from flask_restful import Api, Resource, reqparse
+
+from lib.appformix_collector import AppformixCollector
 from lib.junos_collector import JunosCollector
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-jc_logger = logging.getLogger('lib.junos_collector')
-jc_logger.setLevel(logging.DEBUG)
 
 handler = logging.StreamHandler()
 handler.setLevel(logging.DEBUG)
 
-jc_logger.addHandler(handler)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 logger.addHandler(handler)
+
+jc_logger = logging.getLogger('lib.junos_collector')
+jc_logger.setLevel(logging.DEBUG)
+jc_logger.addHandler(handler)
+
+
+app = Flask(__name__)
+api = Api(app)
+
+parser = reqparse.RequestParser()
 
 class Collector(object):
     def __init__(self):
@@ -30,5 +40,22 @@ class Collector(object):
             logger.info('Joining Thread: %s', thread.name)
             thread.join()
 
+class AppformixCollectorAPI(Resource):
+    def post(self):
+        parser.add_argument('status', type=str, location= 'json')
+        parser.add_argument('spec', type=str, location= 'json')
+        parser.add_argument('kind', type=str, location= 'json')
+
+        args = parser.parse_args()
+        status = ast.literal_eval(args['status'])
+        spec = ast.literal_eval(args['spec'])
+        kind = ast.literal_eval(args['kind'])
+
+        AppformixCollector.send_event(status, spec, kind)
+
+api.add_resource(AppformixCollectorAPI, '/appformix')
+
+
 if __name__ == '__main__':
     Collector()
+    app.run(host='0.0.0.0', port=5002, debug=True)
