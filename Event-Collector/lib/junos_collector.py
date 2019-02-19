@@ -53,7 +53,6 @@ class JunosCollector(object):
             self._connect_to_device(device)
 
     def _connect_to_device(self, device):
-        # TODO: wrap in error debugs
         try:
             logger.debug('Connecting to %s', device['ip'])
             dev = Device(host=device['ip'], user=device['user'], password=device['password']).open()

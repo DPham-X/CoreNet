@@ -1,6 +1,52 @@
+import logging
+import yaml
+from jnpr.junos import Device
+from jnpr.junos.exception import ConnectError
 
+logger = logging.getLogger(__name__)
 
 
 class JunosCliTrigger(object):
-    def __init__(self):
+    def __init__(self, config_path='config/devices.yaml'):
+        self.network_devices = {}
+        self.connected_devices = {}
+
+        self._import_network_devices(config_path)
         pass
+
+    def _import_network_devices(self, network_device_file):
+        logger.debug('Loading network devices into JunosCollector')
+        with open(network_device_file, 'r') as f:
+            import_devices = yaml.load(f.read())
+
+        for device in import_devices['devices']:
+            self.network_devices[device['name']] = device
+            logger.debug('Imported credentials for %s', device['name'])
+
+        for _, device in self.network_devices.items():
+            self._connect_to_device(device)
+
+    def _connect_to_device(self, device):
+        try:
+            logger.debug('Connecting to %s', device['ip'])
+            dev = Device(host=device['ip'], user=device['user'], password=device['password']).open()
+            logger.info('Successfully connected to %s', device['ip'])
+        except ConnectError as e:
+            logger.error('%s', str(e))
+            raise ConnectError(e)
+        else:
+            self.connected_devices[device['name']] = dev
+
+    def execute(self, vars):
+        command = vars['cmd']
+        args = vars['args']
+
+        dev = self.connected_devices[args]
+        logger.info('Executing CLI command: %s', command)
+        output = dev.cli(command)
+        logger.info('%s', output)
+
+
+
+if __name__ == '__main__':
+    JunosCliTrigger(config_path='../config/devices.yaml')
