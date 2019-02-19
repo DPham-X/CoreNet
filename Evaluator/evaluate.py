@@ -78,6 +78,7 @@ class Evaluator(object):
 
         self.running_confs.append(config['name'])
         body = {
+            'evaluation-name': config['name'],
             'commands': config['commands'],
         }
         try:
