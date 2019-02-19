@@ -225,4 +225,4 @@ api.add_resource(DBGetEvent, '/get_events')
 if __name__ == '__main__':
     db_name = 'core.db'
     db_init(db_name)
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)
