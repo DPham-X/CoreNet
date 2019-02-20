@@ -1,0 +1,8 @@
+# Prevents the same evaluation being triggered consistently
+---
+- 1: P1 Interface Up
+  2: P1 Interface Down
+- 1: P2 Interface Up
+  2: P2 Interface Down
+- 1: P3 Interface Up
+  2: P3 Interface Down

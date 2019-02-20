@@ -7,22 +7,52 @@ import requests
 import yaml
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 handler = logging.StreamHandler()
 handler.setLevel(logging.DEBUG)
 
 logger.addHandler(handler)
 
+class Link(object):
+    def __init__(self, l1, l2):
+        self.links = {}
+        self.links[l1] = False
+        self.links[l2] = False
+
+    def _get_other_key(self, d, k):
+        for key, value in d.items():
+            if key != k:
+                return key
+        raise KeyError('Could not find other key')
+
+    def update_link(self, link):
+        if self.links[link] == False:
+            self.links[link] = True
+            other_link = self._get_other_key(self.links, link)
+            self.links[other_link] = False
+            return True
+        logger.info('Already activated')
+        return False
+
+    def __repr__(self):
+        links = [link for link in self.links.keys()]
+        link_1 = links[0]
+        link_2 = links[1]
+        f = 'Status | Link Name\n----------------\n{}   | {}\n{}   | {}'
+        return f.format(self.links[link_1], link_1, self.links[link_2], link_2)
+
 
 class Evaluator(object):
     def __init__(self):
         self.configs = None
         self.events = None
+        self.links = {}
         self.database_url = 'http://localhost:5000'
         self.execution_url = 'http://localhost:5001/exec_command'
         self.running_confs = []
         self._import_config()
+        self._import_links()
 
         while True:
             s = (datetime.now() - timedelta(seconds=15)).isoformat()
@@ -41,6 +71,18 @@ class Evaluator(object):
 
         for config in self.configs:
             config['status'] = 'inactive'
+
+    def _import_links(self):
+        e_links = None
+        with open('evaluation_link.yaml', 'r') as f_links:
+            e_links = yaml.load(f_links.read())
+        if not e_links:
+            raise FileNotFoundError('Could not load config')
+
+        for e_link in e_links:
+            l = Link(e_link[1], e_link[2])
+            self.links[e_link[1]] = l
+            self.links[e_link[2]] = l
 
     def _get_events(self, start_time, end_time):
         self.events = []
@@ -66,8 +108,22 @@ class Evaluator(object):
 
         for config in self.configs:
             if set(config['events']).issubset(unique_events):
-                logger.debug('Executing commands')
+                logger.debug('Executing commands for %s', config['name'])
+                status = self.check_if_already_executed(name=config['name'])
+                if status == False:
+                    logger.info('Skipping')
+                    continue
                 self.execute_commands(config, self.events)
+
+    def check_if_already_executed(self, name):
+        logger.debug('Getting associated Link settings')
+        link = self.links[name]
+        logger.debug(link)
+        logger.debug('Updating link')
+        status = link.update_link(name)
+        logger.debug('Link has been updated')
+        logger.debug(link)
+        return status
 
     def execute_commands(self, config, events):
         headers = {
@@ -83,13 +139,11 @@ class Evaluator(object):
         }
         try:
             logger.info('Posting to {}, {}'.format(self.execution_url, body))
-            r = requests.post(self.execution_url, json=body, headers=headers, timeout=10)
+            r = requests.post(self.execution_url, json=body, headers=headers)
         except Exception as e:
             logger.error(e)
 
         self.running_confs.remove(config['name'])
-
-
 
 
 if __name__ == '__main__':
