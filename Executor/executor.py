@@ -1,9 +1,16 @@
-from flask import Flask, json, request
-from flask_restful import Resource, Api, reqparse
-from lib.northstar_trigger import NorthstarTrigger
 import ast
+import json
 import logging
+import time
+import uuid
+from datetime import datetime
+
+import requests
+from flask import Flask, json, request
+from flask_restful import Api, Resource, reqparse
+
 from lib.junos_cli_trigger import JunosCliTrigger
+from lib.northstar_trigger import NorthstarTrigger
 
 handler = logging.StreamHandler()
 handler.setLevel(logging.DEBUG)
@@ -33,8 +40,14 @@ class ExecuteCommands(Resource):
 
     def post(self):
         parser.add_argument('commands', action='append')
+        parser.add_argument('evaluation_name', action='append')
+        parser.add_argument('binded_events', action='append')
         args = parser.parse_args()
         commands = args.commands
+        name = args.evaluation_name
+
+        binded_events = args.binded_events
+        time = datetime.now().isoformat()
 
         for command_str in commands:
             vars = ast.literal_eval(command_str)
@@ -44,6 +57,20 @@ class ExecuteCommands(Resource):
                 ns.execute(vars['northstar'])
             else:
                 logger.error('Command type not supported: %s', vars)
+
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        body = {
+            'uuid': str(uuid.uuid4()),
+            'name': name,
+            'binded_events': json.dumps(binded_events),
+            'time': str(time),
+            'commands': json.dumps(commands)
+        }
+        r = requests.post('http://127.0.0.1:5000/executions', json=body, headers=headers)
+        logger.info('Sent execution event %s', r.status_code)
+
 
 api.add_resource(ExecuteCommands, '/exec_command')
 

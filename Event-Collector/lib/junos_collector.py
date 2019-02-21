@@ -121,7 +121,7 @@ class JunosCollector(object):
             else:
                 event = self._create_event(name='oper_status.interface.up.{}'.format(device_name),
                                            type='cli',
-                                           priority='critical',
+                                           priority='info',
                                            body={device_name: json.dumps(oper_status)})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
@@ -146,7 +146,7 @@ class JunosCollector(object):
             else:
                 event = self._create_event(name='admin_status.interface.up.{}'.format(device_name),
                                            type='cli',
-                                           priority='critical',
+                                           priority='info',
                                            body={device_name: json.dumps(admin_status)})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])

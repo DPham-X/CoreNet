@@ -46,7 +46,5 @@ class JunosCliTrigger(object):
         output = dev.cli(command)
         logger.info('%s', output)
 
-
-
 if __name__ == '__main__':
     JunosCliTrigger(config_path='../config/devices.yaml')

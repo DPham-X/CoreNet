@@ -1,6 +1,7 @@
 from flask import Flask, json, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Resource, Api, reqparse
+from flask_cors import CORS
 from glob import glob
 from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm.attributes import QueryableAttribute
@@ -10,6 +11,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///core.db'
 db = SQLAlchemy(app)
 api = Api(app)
+CORS(app)
 
 parser = reqparse.RequestParser()
 
@@ -135,6 +137,17 @@ class Event(db.Model):
         output_format = '{}: {} - {}'
         return output_format.format(self.uuid, self.time, self.name)
 
+class Execution(db.Model):
+    uuid = db.Column(db.String(37), unique=True, primary_key=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    binded_events = db.Column(db.String(1000), nullable=False)
+    time = db.Column(db.String(27), nullable=False)
+    commands = db.Column(db.String(1000), nullable=True)
+
+    def __repr__(self):
+        output_format = '{}: {} - {}'
+        return output_format.format(self.uuid, self.time, self.name)
+
 class DBCreateEvent(Resource):
     def post(self):
         parser.add_argument('uuid', type=str)
@@ -151,7 +164,7 @@ class DBCreateEvent(Resource):
                           type=str(args['type']),
                           priority=str(args['priority']),
                           body=str(args['body']))
-        print(repr(json.dumps(str(args['body']))))
+        # print(repr(json.dumps(str(args['body']))))
         status = add_event_to_db(new_event)
         if not status:
             return {'Error': 'Could not add event to database'}, 400
@@ -161,7 +174,7 @@ class DBQuery(Resource):
     def get(self):
         # Get most recent query
         try:
-            queries = [Event.query.filter_by(name='Get interface status').order_by(Event.time.desc()).first()]
+            queries = Event.query.order_by(Event.time.desc()).limit(20)
         except OperationalError:
             return {'Error': 'Database is currently empty'}, 400
         output = []
@@ -169,7 +182,7 @@ class DBQuery(Resource):
             query_serialised = query.to_dict()
             query_serialised['body'] = ast.literal_eval(query_serialised['body'])
             output.append(query_serialised)
-        return output, 200
+        return output, 200, {'Access-Control-Allow-Origin': '*'}
 
 class DBGetEvent(Resource):
     def get(self):
@@ -190,6 +203,29 @@ class DBGetEvent(Resource):
             output.append(query_serialised)
         return output, 200
 
+class DBExecutions(Resource):
+    def get(self):
+        pass
+
+    def post(self):
+        parser.add_argument('uuid', type=str)
+        parser.add_argument('name', type=str)
+        parser.add_argument('binded_events', type=str)
+        parser.add_argument('time', type=str)
+        parser.add_argument('commands', type=str)
+
+        args = parser.parse_args()
+
+        new_event = Execution(uuid=str(args['uuid']),
+                                name=str(args['name']),
+                                binded_events=str(args['binded_events']),
+                                time=str(args['time']),
+                                commands=str(args['commands']))
+
+        status = add_event_to_db(new_event)
+        if not status:
+            return {'Error': 'Could not add execution to database'}, 400
+        return {'Success': 'New execution added with id {}'.format(args['uuid'])}, 201
 
 def db_init(name):
     files = glob('*')
@@ -221,6 +257,7 @@ def add_event_to_db(event):
 api.add_resource(DBQuery, '/get_interface_status')
 api.add_resource(DBCreateEvent, '/create_event')
 api.add_resource(DBGetEvent, '/get_events')
+api.add_resource(DBExecutions, '/executions')
 
 if __name__ == '__main__':
     db_name = 'core.db'
