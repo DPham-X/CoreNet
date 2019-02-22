@@ -48,7 +48,7 @@ class ExecuteCommands(Resource):
         binded_events = args.binded_events
         time = datetime.now().isoformat()
         status = 'Completed'
-        uuid = str(uuid.uuid4())
+        new_uuid = str(uuid.uuid4())
 
         for vars in json.loads(commands):
             try:
@@ -60,7 +60,7 @@ class ExecuteCommands(Resource):
                     ns.execute(vars['northstar'])
                 elif 'junos_backup' in vars:
                     logger.info('Found JunosBackup command')
-                    bt.execute(vars['junos_backup'], uuid)
+                    bt.execute(vars['junos_backup'], new_uuid)
                 else:
                     logger.error('Command type not supported: %s', vars)
                     status = 'Failed'
@@ -72,7 +72,7 @@ class ExecuteCommands(Resource):
             'Content-Type': 'application/json'
         }
         body = {
-            'uuid': uuid,
+            'uuid': new_uuid,
             'name': name,
             'binded_events': binded_events,
             'time': str(time),

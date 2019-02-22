@@ -44,6 +44,9 @@
     - cli:
         cmd: show log messages | match interface | last | no-more
         args: P1
+    - junos_backup:
+        cmd: backup.config
+        args: P2
     - northstar:
         cmd: create.device.maintenance
         args: P2
@@ -74,7 +77,10 @@
         args: P3
     - cli:
         cmd: show log messages | match interface | last | no-more
-        args: P1
+        args: P3
+    - junos_backup:
+        cmd: backup.config
+        args: P3
     - northstar:
         cmd: create.device.maintenance
         args: P3
