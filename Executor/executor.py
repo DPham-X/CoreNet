@@ -16,7 +16,7 @@ handler = logging.StreamHandler()
 handler.setLevel(logging.DEBUG)
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 
 ns_logger = logging.getLogger('lib.northstar_trigger')
@@ -35,28 +35,27 @@ ns = NorthstarTrigger()
 jcli = JunosCliTrigger()
 
 class ExecuteCommands(Resource):
-    def get(self):
-        pass
-
     def post(self):
-        parser.add_argument('commands', action='append')
-        parser.add_argument('evaluation_name', action='append')
-        parser.add_argument('binded_events', action='append')
+        parser.add_argument('commands', type=str)
+        parser.add_argument('evaluation_name', type=str)
+        parser.add_argument('binded_events', type=str)
         args = parser.parse_args()
         commands = args.commands
         name = args.evaluation_name
-
         binded_events = args.binded_events
         time = datetime.now().isoformat()
+        status = 'Unknown'
 
-        for command_str in commands:
-            vars = ast.literal_eval(command_str)
+        for vars in json.loads(commands):
             if 'cli' in vars:
                 jcli.execute(vars['cli'])
+                status = 'Completed'
             elif 'northstar' in vars:
                 ns.execute(vars['northstar'])
+                status = 'Completed'
             else:
                 logger.error('Command type not supported: %s', vars)
+                status = 'Failed'
 
         headers = {
             'Content-Type': 'application/json'
@@ -64,9 +63,10 @@ class ExecuteCommands(Resource):
         body = {
             'uuid': str(uuid.uuid4()),
             'name': name,
-            'binded_events': json.dumps(binded_events),
+            'binded_events': binded_events,
             'time': str(time),
-            'commands': json.dumps(commands)
+            'commands': commands,
+            'status': status
         }
         r = requests.post('http://127.0.0.1:5000/executions', json=body, headers=headers)
         logger.info('Sent execution event %s', r.status_code)

@@ -12,7 +12,6 @@ class JunosCliTrigger(object):
         self.connected_devices = {}
 
         self._import_network_devices(config_path)
-        pass
 
     def _import_network_devices(self, network_device_file):
         logger.debug('Loading network devices into JunosCollector')

@@ -135,8 +135,8 @@ class Evaluator(object):
         self.running_confs.append(config['name'])
         body = {
             'evaluation_name': config['name'],
-            'binded_events': config['events'],
-            'commands': config['commands'],
+            'binded_events': json.dumps(config['events']),
+            'commands': json.dumps(config['commands']),
         }
         try:
             logger.info('Posting to {}, {}'.format(self.execution_url, body))

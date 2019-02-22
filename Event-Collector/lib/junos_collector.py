@@ -97,7 +97,7 @@ class JunosCollector(object):
             'name': name,
             'type': type,
             'priority': priority,
-            'body': body,
+            'body': json.dumps(body),
         }
         return event
 
@@ -115,14 +115,14 @@ class JunosCollector(object):
                 event = self._create_event(name='oper_status.interface.down.{}'.format(device_name),
                                            type='cli',
                                            priority='critical',
-                                           body={device_name: json.dumps(oper_status)})
+                                           body={device_name: oper_status})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
             else:
                 event = self._create_event(name='oper_status.interface.up.{}'.format(device_name),
                                            type='cli',
                                            priority='info',
-                                           body={device_name: json.dumps(oper_status)})
+                                           body={device_name: oper_status})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
@@ -140,14 +140,14 @@ class JunosCollector(object):
                 event = self._create_event(name='admin_status.interface.down.{}'.format(device_name),
                                            type='cli',
                                            priority='critical',
-                                           body={device_name: json.dumps(admin_status)})
+                                           body={device_name: admin_status})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
             else:
                 event = self._create_event(name='admin_status.interface.up.{}'.format(device_name),
                                            type='cli',
                                            priority='info',
-                                           body={device_name: json.dumps(admin_status)})
+                                           body={device_name: admin_status})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
