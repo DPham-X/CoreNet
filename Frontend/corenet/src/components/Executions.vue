@@ -1,28 +1,37 @@
 <template>
-  <div class="hello">
+  <div class="body">
     <h1>{{ msg }}</h1>
     <input name="search">
     <button v-on:click="performSearch">Search</button>
+    <div class="bottom-pad"></div>
     <div>
-      <h2>Events</h2>
-    </div>
-    <div>
-      <b-table striped hover dark small :items="events" :fields="fields">
-        <template slot="body" slot-scope="row">
-          <b-button size="sm" @click="row.toggleDetails" class="mr-2">
-            {{ row.detailsShowing ? 'Hide' : 'Show'}} Details
-          </b-button>
-        </template>
-        <template slot="row-details" slot-scope="row">
-          <b-card>
-            <b-row class="mb-2 details">
-              <b-col sm="3" class="text-sm-right"><b>Body:</b></b-col>
-              <b-col>{{ row.item.body }}</b-col>
-            </b-row>
-            <b-button size="sm" @click="row.toggleDetails">Hide Details</b-button>
-          </b-card>
-        </template>
-      </b-table>
+      <b-container fluid>
+        <b-table
+          striped
+          hover
+          dark
+          small
+          bordered
+          show-empty
+          :items="events"
+          :fields="fields"
+          :current-page="currentPage"
+          :per-page="perPage"
+        >
+          <span slot="binded_events" slot-scope="data" v-html="data.value"/>
+          <span slot="commands" slot-scope="data" v-html="data.value"/>
+        </b-table>
+
+        <div class="mt-3 text-center">
+          <b-pagination
+            :total-rows="totalRows"
+            :per-page="perPage"
+            v-model="currentPage"
+            class="my-0"
+            align="center"
+          />
+        </div>
+      </b-container>
 
     </div>
   </div>
@@ -31,15 +40,31 @@
 <script>
 import axios from 'axios'
 import yaml from 'js-yaml'
+
 export default {
-  name: 'HelloWorld',
+  name: 'Executions',
   data () {
     return {
-      msg: 'Welcome to CoreNet',
+      msg: 'Executions',
       fields: [
         {
           key: 'name',
-          label: 'Name',
+          label: 'Executed Event',
+          sortable: true
+        },
+        {
+          key: 'binded_events',
+          label: 'Binded Events',
+          formatter: 'toString',
+        },
+        {
+          key: 'commands',
+          label: 'Commands',
+          formatter: 'toString'
+        },
+        {
+          key: 'status',
+          label: 'Status',
           sortable: true
         },
         {
@@ -49,28 +74,15 @@ export default {
           sortable: true
         },
         {
-          key: 'priority',
-          label: 'Priority',
-          formatter: 'toTitle',
-          sortable: true
-        },
-        {
-          key: 'type',
-          label: 'Type',
-          formatter: 'toUpper',
-          sortable: true
-        },
-        {
           key: 'uuid',
           label: 'UUID',
           sortable: true
-        },
-        {
-          key: 'body',
-          label: 'Description'
         }
       ],
-      events: []
+      events: this.performSearch(),
+      totalRows: 5,
+      perPage: 5,
+      currentPage: 1,
     }
   },
   created () {
@@ -79,29 +91,20 @@ export default {
   methods: {
     performSearch: function () {
       const link = 'http://127.0.0.1:5000/'
-      const apiLink = link + 'get_interface_status'
+      const apiLink = link + 'executions'
 
       axios
         .get(apiLink)
         .then(response => {
-          const oldEvents = this.events
           this.events = response.data
-          for (var i = 0; i < this.events.length; i++) {
-            this.$set(this.events[i], '_showDetails', false)
-            this.events[i].body = this.toString(this.events[i].body)
-            for (var j = 0; j < oldEvents.length; j++) {
-              if (this.events[i].uuid === oldEvents[j].uuid) {
-                this.events[i]._showDetails = oldEvents[j]._showDetails
-              }
-            }
-          }
+          this.totalRows = this.events.length
         })
         .catch(error => {
           console.log(error)
         })
     },
     getEvents: function () {
-      setInterval(this.performSearch, 2000)
+      setInterval(this.performSearch, 1000)
     },
     convertIsoDate: function (isodate) {
       let date = new Date(isodate)
@@ -146,7 +149,19 @@ export default {
     },
     toString: function (string) {
       let y = yaml.dump(JSON.parse(JSON.stringify(string)))
-      return y
+      return this.convertBreak(y)
+    },
+    convertBreak: function (str) {
+      if (!str) {
+        return '' // don't want `undefined` printing into page
+      }
+      // if it's something other than string, return it as is
+      if ( typeof str === 'string') {
+        return '<div class="text-left">' + str.replace(/\n/g, "<br>").replace(/\s/g, "&nbsp") + '</div>'
+      }
+      else {
+        return str
+      }
     }
   }
 }
@@ -170,5 +185,8 @@ a {
 }
 .details {
   color: #000000;
+}
+.bottom-pad {
+  margin-bottom: 10px
 }
 </style>
