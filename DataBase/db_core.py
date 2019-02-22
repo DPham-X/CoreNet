@@ -24,114 +24,114 @@ class Event(db.Model):
     priority = db.Column(db.String(20), nullable=True)
     body = db.Column(db.String(100000), nullable=True)
 
-    def to_dict(self, show=None, _hide=[], _path=None):
-        """Return a dictionary representation of this model."""
+    # def to_dict(self, show=None, _hide=[], _path=None):
+    #     """Return a dictionary representation of this model."""
 
-        show = show or []
+    #     show = show or []
 
-        hidden = self._hidden_fields if hasattr(self, "_hidden_fields") else []
-        default = self._default_fields if hasattr(self, "_default_fields") else []
-        default.extend(['uuid', 'time', 'name', 'type', 'priority', 'body'])
+    #     hidden = self._hidden_fields if hasattr(self, "_hidden_fields") else []
+    #     default = self._default_fields if hasattr(self, "_default_fields") else []
+    #     default.extend(['uuid', 'time', 'name', 'type', 'priority', 'body'])
 
-        if not _path:
-            _path = self.__tablename__.lower()
+    #     if not _path:
+    #         _path = self.__tablename__.lower()
 
-            def prepend_path(item):
-                item = item.lower()
-                if item.split(".", 1)[0] == _path:
-                    return item
-                if len(item) == 0:
-                    return item
-                if item[0] != ".":
-                    item = ".%s" % item
-                item = "%s%s" % (_path, item)
-                return item
+    #         def prepend_path(item):
+    #             item = item.lower()
+    #             if item.split(".", 1)[0] == _path:
+    #                 return item
+    #             if len(item) == 0:
+    #                 return item
+    #             if item[0] != ".":
+    #                 item = ".%s" % item
+    #             item = "%s%s" % (_path, item)
+    #             return item
 
-            _hide[:] = [prepend_path(x) for x in _hide]
-            show[:] = [prepend_path(x) for x in show]
+    #         _hide[:] = [prepend_path(x) for x in _hide]
+    #         show[:] = [prepend_path(x) for x in show]
 
-        columns = self.__table__.columns.keys()
-        relationships = self.__mapper__.relationships.keys()
-        properties = dir(self)
+    #     columns = self.__table__.columns.keys()
+    #     relationships = self.__mapper__.relationships.keys()
+    #     properties = dir(self)
 
-        ret_data = {}
+    #     ret_data = {}
 
-        for key in columns:
-            if key.startswith("_"):
-                continue
-            check = "%s.%s" % (_path, key)
-            if check in _hide or key in hidden:
-                continue
-            if check in show or key in default:
-                ret_data[key] = getattr(self, key)
+    #     for key in columns:
+    #         if key.startswith("_"):
+    #             continue
+    #         check = "%s.%s" % (_path, key)
+    #         if check in _hide or key in hidden:
+    #             continue
+    #         if check in show or key in default:
+    #             ret_data[key] = getattr(self, key)
 
-        for key in relationships:
-            if key.startswith("_"):
-                continue
-            check = "%s.%s" % (_path, key)
-            if check in _hide or key in hidden:
-                continue
-            if check in show or key in default:
-                _hide.append(check)
-                is_list = self.__mapper__.relationships[key].uselist
-                if is_list:
-                    items = getattr(self, key)
-                    if self.__mapper__.relationships[key].query_class is not None:
-                        if hasattr(items, "all"):
-                            items = items.all()
-                    ret_data[key] = []
-                    for item in items:
-                        ret_data[key].append(
-                            item.to_dict(
-                                show=list(show),
-                                _hide=list(_hide),
-                                _path=("%s.%s" % (_path, key.lower())),
-                            )
-                        )
-                else:
-                    if (
-                        self.__mapper__.relationships[key].query_class is not None
-                        or self.__mapper__.relationships[key].instrument_class
-                        is not None
-                    ):
-                        item = getattr(self, key)
-                        if item is not None:
-                            ret_data[key] = item.to_dict(
-                                show=list(show),
-                                _hide=list(_hide),
-                                _path=("%s.%s" % (_path, key.lower())),
-                            )
-                        else:
-                            ret_data[key] = None
-                    else:
-                        ret_data[key] = getattr(self, key)
+    #     for key in relationships:
+    #         if key.startswith("_"):
+    #             continue
+    #         check = "%s.%s" % (_path, key)
+    #         if check in _hide or key in hidden:
+    #             continue
+    #         if check in show or key in default:
+    #             _hide.append(check)
+    #             is_list = self.__mapper__.relationships[key].uselist
+    #             if is_list:
+    #                 items = getattr(self, key)
+    #                 if self.__mapper__.relationships[key].query_class is not None:
+    #                     if hasattr(items, "all"):
+    #                         items = items.all()
+    #                 ret_data[key] = []
+    #                 for item in items:
+    #                     ret_data[key].append(
+    #                         item.to_dict(
+    #                             show=list(show),
+    #                             _hide=list(_hide),
+    #                             _path=("%s.%s" % (_path, key.lower())),
+    #                         )
+    #                     )
+    #             else:
+    #                 if (
+    #                     self.__mapper__.relationships[key].query_class is not None
+    #                     or self.__mapper__.relationships[key].instrument_class
+    #                     is not None
+    #                 ):
+    #                     item = getattr(self, key)
+    #                     if item is not None:
+    #                         ret_data[key] = item.to_dict(
+    #                             show=list(show),
+    #                             _hide=list(_hide),
+    #                             _path=("%s.%s" % (_path, key.lower())),
+    #                         )
+    #                     else:
+    #                         ret_data[key] = None
+    #                 else:
+    #                     ret_data[key] = getattr(self, key)
 
-        for key in list(set(properties) - set(columns) - set(relationships)):
-            if key.startswith("_"):
-                continue
-            if not hasattr(self.__class__, key):
-                continue
-            attr = getattr(self.__class__, key)
-            if not (isinstance(attr, property) or isinstance(attr, QueryableAttribute)):
-                continue
-            check = "%s.%s" % (_path, key)
-            if check in _hide or key in hidden:
-                continue
-            if check in show or key in default:
-                val = getattr(self, key)
-                if hasattr(val, "to_dict"):
-                    ret_data[key] = val.to_dict(
-                        show=list(show),
-                        _hide=list(_hide),
-                        _path=("%s.%s" % (_path, key.lower())),
-                    )
-                else:
-                    try:
-                        ret_data[key] = json.loads(json.dumps(val))
-                    except:
-                        pass
+    #     for key in list(set(properties) - set(columns) - set(relationships)):
+    #         if key.startswith("_"):
+    #             continue
+    #         if not hasattr(self.__class__, key):
+    #             continue
+    #         attr = getattr(self.__class__, key)
+    #         if not (isinstance(attr, property) or isinstance(attr, QueryableAttribute)):
+    #             continue
+    #         check = "%s.%s" % (_path, key)
+    #         if check in _hide or key in hidden:
+    #             continue
+    #         if check in show or key in default:
+    #             val = getattr(self, key)
+    #             if hasattr(val, "to_dict"):
+    #                 ret_data[key] = val.to_dict(
+    #                     show=list(show),
+    #                     _hide=list(_hide),
+    #                     _path=("%s.%s" % (_path, key.lower())),
+    #                 )
+    #             else:
+    #                 try:
+    #                     ret_data[key] = json.loads(json.dumps(val))
+    #                 except:
+    #                     pass
 
-        return ret_data
+    #     return ret_data
 
     def __repr__(self):
         output_format = '{}: {} - {}'
@@ -143,6 +143,7 @@ class Execution(db.Model):
     binded_events = db.Column(db.String(1000), nullable=False)
     time = db.Column(db.String(27), nullable=False)
     commands = db.Column(db.String(1000), nullable=True)
+    status = db.Column(db.String(20), nullable=True)
 
     def __repr__(self):
         output_format = '{}: {} - {}'
@@ -174,13 +175,19 @@ class DBQuery(Resource):
     def get(self):
         # Get most recent query
         try:
-            queries = Event.query.order_by(Event.time.desc()).limit(20)
+            queries = Event.query.order_by(Event.time.desc()).limit(50)
         except OperationalError:
             return {'Error': 'Database is currently empty'}, 400
         output = []
         for query in queries:
-            query_serialised = query.to_dict()
-            query_serialised['body'] = ast.literal_eval(query_serialised['body'])
+            query_serialised = {
+                'uuid': query.uuid,
+                'time': query.time,
+                'name': query.name,
+                'type': query.type,
+                'priority': query.priority,
+                'body': json.loads(query.body)
+            }
             output.append(query_serialised)
         return output, 200, {'Access-Control-Allow-Origin': '*'}
 
@@ -198,14 +205,36 @@ class DBGetEvent(Resource):
             return {'Error': 'Bad request'}, 400
         output = []
         for query in queries:
-            query_serialised = query.to_dict()
-            query_serialised['body'] = ast.literal_eval(query_serialised['body'])
+            query_serialised = {
+                'uuid': query.uuid,
+                'time': query.time,
+                'name': query.name,
+                'type': query.type,
+                'priority': query.priority,
+                'body': json.loads(query.body)
+            }
             output.append(query_serialised)
-        return output, 200
+        return output, 200, {'Access-Control-Allow-Origin': '*'}
 
 class DBExecutions(Resource):
     def get(self):
-        pass
+        # Get most recent query
+        try:
+            queries = Execution.query.order_by(Execution.time.desc()).limit(20)
+        except OperationalError:
+            return {'Error': 'Database is currently empty'}, 400
+        output = []
+        for query in queries:
+            query_serialised = {
+                'uuid': query.uuid,
+                'name': query.name,
+                'binded_events': json.loads(query.binded_events),
+                'time': query.time,
+                'commands': json.loads(query.commands),
+                'status': query.status,
+            }
+            output.append(query_serialised)
+        return output, 200, {'Access-Control-Allow-Origin': '*'}
 
     def post(self):
         parser.add_argument('uuid', type=str)
@@ -213,6 +242,7 @@ class DBExecutions(Resource):
         parser.add_argument('binded_events', type=str)
         parser.add_argument('time', type=str)
         parser.add_argument('commands', type=str)
+        parser.add_argument('status', type=str)
 
         args = parser.parse_args()
 
@@ -220,10 +250,11 @@ class DBExecutions(Resource):
                                 name=str(args['name']),
                                 binded_events=str(args['binded_events']),
                                 time=str(args['time']),
+                                status=str(args['status']),
                                 commands=str(args['commands']))
 
-        status = add_event_to_db(new_event)
-        if not status:
+        db_status = add_event_to_db(new_event)
+        if not db_status:
             return {'Error': 'Could not add execution to database'}, 400
         return {'Success': 'New execution added with id {}'.format(args['uuid'])}, 201
 
