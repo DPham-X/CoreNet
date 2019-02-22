@@ -43,7 +43,5 @@ class JunosCliTrigger(object):
         dev = self.connected_devices[args]
         logger.info('Executing CLI command: %s', command)
         output = dev.cli(command)
-        logger.info('%s', output)
-
-if __name__ == '__main__':
-    JunosCliTrigger(config_path='../config/devices.yaml')
+        if output:
+            logger.info('Success')

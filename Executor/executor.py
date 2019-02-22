@@ -11,6 +11,7 @@ from flask_restful import Api, Resource, reqparse
 
 from lib.junos_cli_trigger import JunosCliTrigger
 from lib.northstar_trigger import NorthstarTrigger
+from lib.backup_trigger import BackupTrigger
 
 handler = logging.StreamHandler()
 handler.setLevel(logging.DEBUG)
@@ -33,6 +34,8 @@ parser = reqparse.RequestParser()
 
 ns = NorthstarTrigger()
 jcli = JunosCliTrigger()
+bt = BackupTrigger()
+
 
 class ExecuteCommands(Resource):
     def post(self):
@@ -44,24 +47,32 @@ class ExecuteCommands(Resource):
         name = args.evaluation_name
         binded_events = args.binded_events
         time = datetime.now().isoformat()
-        status = 'Unknown'
+        status = 'Completed'
+        uuid = str(uuid.uuid4())
 
         for vars in json.loads(commands):
-            if 'cli' in vars:
-                jcli.execute(vars['cli'])
-                status = 'Completed'
-            elif 'northstar' in vars:
-                ns.execute(vars['northstar'])
-                status = 'Completed'
-            else:
-                logger.error('Command type not supported: %s', vars)
+            try:
+                if 'cli' in vars:
+                    logger.info('Found CLI command')
+                    jcli.execute(vars['cli'])
+                elif 'northstar' in vars:
+                    logger.info('Found Northstar command')
+                    ns.execute(vars['northstar'])
+                elif 'junos_backup' in vars:
+                    logger.info('Found JunosBackup command')
+                    bt.execute(vars['junos_backup'], uuid)
+                else:
+                    logger.error('Command type not supported: %s', vars)
+                    status = 'Failed'
+            except KeyError as e:
+                logger.error('An error occurred %s', e)
                 status = 'Failed'
 
         headers = {
             'Content-Type': 'application/json'
         }
         body = {
-            'uuid': str(uuid.uuid4()),
+            'uuid': uuid,
             'name': name,
             'binded_events': binded_events,
             'time': str(time),

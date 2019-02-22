@@ -221,8 +221,11 @@ class NorthstarTrigger(object):
         }
 
         logger.debug('Triggering path optimisation')
-        r = requests.request('POST', path_optimisation_url, data='', headers=headers, verify=self.verify)
-        assert r.status_code == 200, r.status_code
+        try:
+            r = requests.request('POST', path_optimisation_url, data='', headers=headers, verify=self.verify)
+            assert r.status_code == 200, r.status_code
+        except AssertionError:
+            return False
         response = r.json()
         logger.info(response['result '])
 
@@ -263,7 +266,7 @@ class NorthstarTrigger(object):
         args = vars['args']
 
         if command == 'trigger.optimisation':
-            self.trigger_path_optimisation()
+            s = self.trigger_path_optimisation()
         elif command == 'create.device.maintenance':
             self.put_device_in_maintenance(args, 'maintenance_{}'.format(args))
         elif command == 'delete.device.maintenance':

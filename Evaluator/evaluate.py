@@ -15,10 +15,18 @@ handler.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 
 class Link(object):
-    def __init__(self, l1, l2):
+    def __init__(self, link):
         self.links = {}
-        self.links[l1] = False
-        self.links[l2] = False
+
+        self.links[link[1]] = False
+        self.links[link[2]] = False
+
+        if 'default' in link.keys():
+            default_link = link['default']
+            if default_link == 1:
+                self.links[link[1]] = True
+            elif default_link == 2:
+                self.links[link[2]] = True
 
     def _get_other_key(self, d, k):
         for key, value in d.items():
@@ -80,9 +88,11 @@ class Evaluator(object):
             raise FileNotFoundError('Could not load config')
 
         for e_link in e_links:
-            l = Link(e_link[1], e_link[2])
+            l = Link(e_link)
+            logger.info('Imported Link: %s <-> %s', e_link[1], e_link[2])
             self.links[e_link[1]] = l
             self.links[e_link[2]] = l
+
 
     def _get_events(self, start_time, end_time):
         self.events = []
