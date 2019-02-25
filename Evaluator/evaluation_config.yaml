@@ -8,7 +8,7 @@
       cmd: show interfaces terse
       args: P1
     - type: cli
-      cmd: show log messages | match interface | last 100 | no-more
+      cmd: show log messages | match interface | last 100
       args: P1
     - type: junos_backup
       cmd: backup.config
@@ -42,7 +42,7 @@
       cmd: show interfaces terse
       args: P2
     - type: cli
-      cmd: show log messages | match interface | last 100 | no-more
+      cmd: show log messages | match interface | last 100
       args: P1
     - type: junos_backup
       cmd: backup.config
@@ -76,7 +76,7 @@
       cmd: show interfaces terse
       args: P3
     - type: cli
-      cmd: show log messages | match interface | last 100 | no-more
+      cmd: show log messages | match interface | last 100
       args: P3
     - type: junos_backup
       cmd: backup.config
