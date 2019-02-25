@@ -30,8 +30,8 @@ class JunosCollector(object):
             # Pre
             self.get_interface_status()
             # Post
-            self.get_oper_status_down()
-            self.get_admin_status_down()
+            self.get_oper_status()
+            self.get_admin_status()
             time.sleep(30)
 
     def add_event_to_db(self, event_msg):
@@ -101,8 +101,8 @@ class JunosCollector(object):
         }
         return event
 
-    def get_oper_status_down(self):
-        to_monitor = ['ge-0/0/1']
+    def get_oper_status(self):
+        to_monitor = ['ge-0/0/0', 'ge-0/0/1', 'ge-0/0/2', 'ge-0/0/0.0', 'ge-0/0/1.0', 'ge-0/0/2.0']
         for device_name, interfaces in self.interface_status.items():
             oper_status = []
             for interface_name, interface in interfaces.items():
@@ -126,8 +126,8 @@ class JunosCollector(object):
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
-    def get_admin_status_down(self):
-        to_monitor = ['ge-0/0/1']
+    def get_admin_status(self):
+        to_monitor = ['ge-0/0/0', 'ge-0/0/1', 'ge-0/0/2', 'ge-0/0/0.0', 'ge-0/0/1.0', 'ge-0/0/2.0']
         for device_name, interfaces in self.interface_status.items():
             admin_status = []
             for interface_name, interface in interfaces.items():

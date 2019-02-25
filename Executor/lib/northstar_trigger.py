@@ -228,12 +228,14 @@ class NorthstarTrigger(object):
             return False
         response = r.json()
         logger.info(response['result '])
+        return response
 
     def put_device_in_maintenance(self, router_name, event_name):
         topology_info = self.get_topology_elements()
         index = self._node_id_from_name(router_name, topology_info)
         logger.debug('Creating new maintenance for \'{}\''.format(router_name))
         self.create_new_maintenance(event_name, index)
+        return 'Creating new maintenance for \'{}\''.format(router_name)
 
     def delete_maintenance(self, event_name):
         maintenance_list = self.get_maintenance_list()
@@ -249,6 +251,8 @@ class NorthstarTrigger(object):
         if maintenance_name:
             self.update_maintenance('cancelled', maintenance_index, maintenance_info)
             self.update_maintenance('deleted', maintenance_index, maintenance_info)
+
+        return '{} has been deleted'.format(event_name)
 
     def delete_all_maintenances(self):
         maintenance_list = self.get_maintenance_list()
@@ -266,10 +270,11 @@ class NorthstarTrigger(object):
         args = vars['args']
 
         if command == 'trigger.optimisation':
-            s = self.trigger_path_optimisation()
+            output = self.trigger_path_optimisation()
         elif command == 'create.device.maintenance':
-            self.put_device_in_maintenance(args, 'maintenance_{}'.format(args))
+            output = self.put_device_in_maintenance(args, 'maintenance_{}'.format(args))
         elif command == 'delete.device.maintenance':
-            self.delete_maintenance('maintenance_{}'.format(args))
+            output = self.delete_maintenance('maintenance_{}'.format(args))
         else:
             logger.error('Undefined northstar command ... skipping - %s', command)
+        return output

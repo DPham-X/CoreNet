@@ -45,3 +45,4 @@ class JunosCliTrigger(object):
         output = dev.cli(command)
         if output:
             logger.info('Success')
+        return output
