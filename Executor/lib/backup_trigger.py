@@ -47,13 +47,15 @@ class BackupTrigger(object):
         filename = '{}config_{}_{}.conf'.format(self.backup_folder, date, uuid)
         with open(filename, 'w') as f:
             f.write(output)
+        return 'Config was backed up to {}'.format(filename)
 
     def execute(self, vars, uuid):
         command  = vars['cmd']
         args = vars['args']
 
         if 'backup.config' == command:
-            self.backup_config(args, uuid)
+            output = self.backup_config(args, uuid)
         else:
             logger.error('Undefined BackupTrigger command ... skipping - %s', command)
             return False
+        return output
