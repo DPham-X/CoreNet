@@ -117,7 +117,7 @@ export default {
   },
   methods: {
     performSearch: function () {
-      const link = 'http://127.0.0.1:5000/'
+      const link = 'http://10.49.227.135:5000/'
       const apiLink = link + 'get_interface_status'
 
       axios
@@ -189,9 +189,9 @@ export default {
       return y
     },
     onFiltered: function (filteredItems) {
-        // Trigger pagination to update the number of buttons/pages due to filtering
-        this.totalRows = filteredItems.length
-        this.currentPage = 1
+      // Trigger pagination to update the number of buttons/pages due to filtering
+      this.totalRows = filteredItems.length
+      this.currentPage = 1
     }
   }
 }

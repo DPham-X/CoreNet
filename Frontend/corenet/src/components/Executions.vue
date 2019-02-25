@@ -19,8 +19,22 @@
           :per-page="perPage"
         >
           <span slot="binded_events" slot-scope="data" v-html="data.value"/>
-          <span slot="commands" slot-scope="data" v-html="data.value"/>
+          <span slot="commands" slot-scope="data">
+            <template v-for="(command, i) in data.item.commands">
+              <tr :key="command + i">
+                <td align="left" class="font-weight-bold" style="padding: 0; height:100%; width:100%">{{toUpper(command.type)}} -> {{ command.cmd }} </td>
+                <td align="right">
+                  <b-button size="sm" v-b-modal.cmdModal @click="sendCommands(command)"> Output </b-button>
+                </td>
+              </tr>
+            </template>
+          </span>
         </b-table>
+
+        <b-modal id="cmdModal" title="Executed command output" size="xl" class="font-black" scrollable=true
+                 >
+          <div class="font-monospace" v-html="commandOutput"></div>
+        </b-modal>
 
         <div class="mt-3 text-center">
           <b-pagination
@@ -45,6 +59,7 @@ export default {
   name: 'Executions',
   data () {
     return {
+      commandOutput: '',
       msg: 'Executions',
       fields: [
         {
@@ -55,12 +70,12 @@ export default {
         {
           key: 'binded_events',
           label: 'Binded Events',
-          formatter: 'toString',
+          formatter: 'toString'
         },
         {
           key: 'commands',
           label: 'Commands',
-          formatter: 'toString'
+          formatter: 'toString2'
         },
         {
           key: 'status',
@@ -82,15 +97,15 @@ export default {
       events: this.performSearch(),
       totalRows: 5,
       perPage: 5,
-      currentPage: 1,
+      currentPage: 1
     }
   },
   created () {
-    this.getEvents()
+    this.performSearch()
   },
   methods: {
     performSearch: function () {
-      const link = 'http://127.0.0.1:5000/'
+      const link = 'http://10.49.227.135:5000/'
       const apiLink = link + 'executions'
 
       axios
@@ -148,20 +163,44 @@ export default {
       return str.join(' ')
     },
     toString: function (string) {
-      let y = yaml.dump(JSON.parse(JSON.stringify(string)))
-      return this.convertBreak(y)
+      let jsonConverted = JSON.parse(JSON.stringify(string))
+      let yamlConverted = yaml.dump(jsonConverted)
+      let htmlConverted = this.convertBreak(yamlConverted)
+      return htmlConverted
     },
     convertBreak: function (str) {
       if (!str) {
         return '' // don't want `undefined` printing into page
       }
       // if it's something other than string, return it as is
-      if ( typeof str === 'string') {
-        return '<div class="text-left">' + str.replace(/\n/g, "<br>").replace(/\s/g, "&nbsp") + '</div>'
-      }
-      else {
+      if (typeof str === 'string') {
+        return '<div class="text-left">' + str.replace(/\n/g, '<br>').replace(/\s/g, '&nbsp') + '</div>'
+      } else {
         return str
       }
+    },
+    removeOutput: function (jsonObject) {
+      for (var i = 0; i < jsonObject.length; i++) {
+        if ('cli' in jsonObject[i]) {
+          if ('output' in jsonObject[i]['cli']) {
+            delete jsonObject[i]['cli']['output']
+          }
+        }
+        if ('northstar' in jsonObject[i]) {
+          if ('output' in jsonObject[i]['northstar']) {
+            delete jsonObject[i]['northstar']['output']
+          }
+        }
+        if ('junos_backup' in jsonObject[i]) {
+          if ('output' in jsonObject[i]['junos_backup']) {
+            delete jsonObject[i]['junos_backup']['output']
+          }
+        }
+      }
+      return jsonObject
+    },
+    sendCommands: function (command) {
+      this.commandOutput = this.convertBreak(command.output)
     }
   }
 }
@@ -187,6 +226,15 @@ a {
   color: #000000;
 }
 .bottom-pad {
-  margin-bottom: 10px
+  margin-bottom: 10px;
+}
+.font-monospace {
+  font-family: Consolas, monospace, "Courier New";
+}
+.font-black {
+  color: #000000;
 }
 </style>
+.modal-header .ok .cancel {
+  display: none;
+}
