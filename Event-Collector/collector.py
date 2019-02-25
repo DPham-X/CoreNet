@@ -26,6 +26,9 @@ api = Api(app)
 
 parser = reqparse.RequestParser()
 
+ac = AppformixCollector()
+
+
 class Collector(object):
     def __init__(self):
         threads = []
@@ -47,15 +50,14 @@ class AppformixCollectorAPI(Resource):
         parser.add_argument('kind', type=str, location= 'json')
 
         args = parser.parse_args()
-        status = ast.literal_eval(args['status'])
-        spec = ast.literal_eval(args['spec'])
-        kind = ast.literal_eval(args['kind'])
-
-        AppformixCollector.send_event(status, spec, kind)
+        status = ast.literal_eval(args.status)
+        spec = ast.literal_eval(args.spec)
+        kind = str(args.kind)
+        ac.send_event(status, spec, kind)
 
 api.add_resource(AppformixCollectorAPI, '/appformix')
 
 
 if __name__ == '__main__':
-    Collector()
+    # Collector()
     app.run(host='0.0.0.0', port=5002, debug=True)

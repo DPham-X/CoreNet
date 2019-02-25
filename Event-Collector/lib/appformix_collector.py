@@ -1,12 +1,14 @@
 import uuid
 from datetime import datetime
 import requests
+import logging
+
+logger = logging.getLogger(__name__)
 
 
-
-def AppformixCollector(object):
+class AppformixCollector(object):
     def __init__(self):
-        self.db_url = 'http://localhost:5000/create_event'
+        self.db_url = 'http://127.0.0.1:5000/create_event'
 
     def send_event(self, status, spec, kind):
         if kind == 'Alarm':
@@ -17,7 +19,7 @@ def AppformixCollector(object):
             type = 'AppFormixUnknown'
 
         name = spec['name']
-        time = datetime.fromtimestamp(status['timestamp']).isoformat()
+        time = datetime.fromtimestamp(status['timestamp']/ 1e3).isoformat()
         priority = spec['severity']
         body = status['metaData']
 
