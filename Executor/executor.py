@@ -14,7 +14,7 @@ from lib.northstar_trigger import NorthstarTrigger
 from lib.backup_trigger import BackupTrigger
 
 handler = logging.StreamHandler()
-handler.setLevel(logging.DEBUG)
+handler.setLevel(logging.INFO)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -49,24 +49,34 @@ class ExecuteCommands(Resource):
         time = datetime.now().isoformat()
         status = 'Completed'
         new_uuid = str(uuid.uuid4())
-
-        for vars in json.loads(commands):
+        output = ''
+        python_commands = json.loads(commands)
+        for i, command in enumerate(python_commands):
             try:
-                if 'cli' in vars:
+                if 'cli' == command['type']:
                     logger.info('Found CLI command')
-                    jcli.execute(vars['cli'])
-                elif 'northstar' in vars:
+                    output = jcli.execute(command)
+                    type = 'cli'
+                elif 'northstar' == command['type']:
                     logger.info('Found Northstar command')
-                    ns.execute(vars['northstar'])
-                elif 'junos_backup' in vars:
+                    output = ns.execute(command)
+                    type = 'northstar'
+                elif 'junos_backup' == command['type']:
                     logger.info('Found JunosBackup command')
-                    bt.execute(vars['junos_backup'], new_uuid)
+                    output = bt.execute(command, new_uuid)
+                    type = 'junos_backup'
                 else:
-                    logger.error('Command type not supported: %s', vars)
+                    logger.error('Command type not supported: %s', command['type'])
                     status = 'Failed'
+                    raise KeyError
             except KeyError as e:
                 logger.error('An error occurred %s', e)
                 status = 'Failed'
+            else:
+                if not output:
+                    continue
+                logger.debug(output)
+                python_commands[i]['output'] = str(output)
 
         headers = {
             'Content-Type': 'application/json'
@@ -76,7 +86,7 @@ class ExecuteCommands(Resource):
             'name': name,
             'binded_events': binded_events,
             'time': str(time),
-            'commands': commands,
+            'commands': json.dumps(python_commands),
             'status': status
         }
         r = requests.post('http://127.0.0.1:5000/executions', json=body, headers=headers)

@@ -4,100 +4,100 @@
     - oper_status.interface.down.P1
     - admin_status.interface.down.P1
   commands:
-    - cli:
-        cmd: show interfaces terse
-        args: P1
-    - cli:
-        cmd: show log messages | match interface | last | no-more
-        args: P1
-    - junos_backup:
-        cmd: backup.config
-        args: P1
-    - northstar:
-        cmd: create.device.maintenance
-        args: P1
-    - northstar:
-        cmd: trigger.optimisation
-        args: None
+    - type: cli
+      cmd: show interfaces terse
+      args: P1
+    - type: cli
+      cmd: show log messages | match interface | last 100 | no-more
+      args: P1
+    - type: junos_backup
+      cmd: backup.config
+      args: P1
+    - type: northstar
+      cmd: create.device.maintenance
+      args: P1
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
 - name: P1 Interface Up
   events:
     - oper_status.interface.up.P1
     - admin_status.interface.up.P1
   commands:
-    - cli:
-        cmd: show interfaces terse
-        args: P1
-    - northstar:
-        cmd: delete.device.maintenance
-        args: P1
-    - northstar:
-        cmd: trigger.optimisation
-        args: None
+    - type: cli
+      cmd: show interfaces terse
+      args: P1
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: P1
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
 - name: P2 Interface Down
   events:
     - oper_status.interface.down.P2
     - admin_status.interface.down.P2
   commands:
-    - cli:
-        cmd: show interfaces terse
-        args: P2
-    - cli:
-        cmd: show log messages | match interface | last | no-more
-        args: P1
-    - junos_backup:
-        cmd: backup.config
-        args: P2
-    - northstar:
-        cmd: create.device.maintenance
-        args: P2
-    - northstar:
-        cmd: trigger.optimisation
-        args: None
+    - type: cli
+      cmd: show interfaces terse
+      args: P2
+    - type: cli
+      cmd: show log messages | match interface | last 100 | no-more
+      args: P1
+    - type: junos_backup
+      cmd: backup.config
+      args: P2
+    - type: northstar
+      cmd: create.device.maintenance
+      args: P2
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
 - name: P2 Interface Up
   events:
     - oper_status.interface.up.P2
     - admin_status.interface.up.P2
   commands:
-    - cli:
-        cmd: show interfaces terse
-        args: P2
-    - northstar:
-        cmd: delete.device.maintenance
-        args: P2
-    - northstar:
-        cmd: trigger.optimisation
-        args: None
+    - type: cli
+      cmd: show interfaces terse
+      args: P2
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: P2
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
 - name: P3 Interface Down
   events:
     - oper_status.interface.down.P3
     - admin_status.interface.down.P3
   commands:
-    - cli:
-        cmd: show interfaces terse
-        args: P3
-    - cli:
-        cmd: show log messages | match interface | last | no-more
-        args: P3
-    - junos_backup:
-        cmd: backup.config
-        args: P3
-    - northstar:
-        cmd: create.device.maintenance
-        args: P3
-    - northstar:
-        cmd: trigger.optimisation
-        args: None
+    - type: cli
+      cmd: show interfaces terse
+      args: P3
+    - type: cli
+      cmd: show log messages | match interface | last 100 | no-more
+      args: P3
+    - type: junos_backup
+      cmd: backup.config
+      args: P3
+    - type: northstar
+      cmd: create.device.maintenance
+      args: P3
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
 - name: P3 Interface Up
   events:
     - oper_status.interface.up.P3
     - admin_status.interface.up.P3
   commands:
-    - cli:
-        cmd: show interfaces terse
-        args: P3
-    - northstar:
-        cmd: delete.device.maintenance
-        args: P3
-    - northstar:
-        cmd: trigger.optimisation
-        args: None
+    - type: cli
+      cmd: show interfaces terse
+      args: P3
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: P3
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
