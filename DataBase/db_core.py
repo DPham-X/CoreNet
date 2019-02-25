@@ -142,7 +142,7 @@ class Execution(db.Model):
     name = db.Column(db.String(100), nullable=False)
     binded_events = db.Column(db.String(1000), nullable=False)
     time = db.Column(db.String(27), nullable=False)
-    commands = db.Column(db.String(1000), nullable=True)
+    commands = db.Column(db.String(100000), nullable=True)
     status = db.Column(db.String(20), nullable=True)
 
     def __repr__(self):
