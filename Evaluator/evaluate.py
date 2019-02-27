@@ -56,18 +56,23 @@ class Evaluator(object):
         self.configs = None
         self.events = None
         self.links = {}
-        self.database_url = 'http://localhost:5000'
-        self.execution_url = 'http://localhost:5001/exec_command'
+        self.database_url = 'http://10.49.227.135:5000'
+        self.execution_url = 'http://10.49.227.135:5001/exec_command'
         self.running_confs = []
         self._import_config()
         self._import_links()
 
+        interval_s = datetime(1,1,1)
+        interval_e = datetime(1,1,1)
+
         while True:
-            s = (datetime.now() - timedelta(seconds=15)).isoformat()
+            s = (datetime.now() - timedelta(seconds=60) - (interval_e - interval_s)).isoformat()
             e = datetime.now().isoformat()
+            interval_s = datetime.now()
             self._get_events(s, e)
             self._evaluate_events()
-            time.sleep(15)
+            interval_e = datetime.now()
+            time.sleep(60)
 
     def _import_config(self):
         config = None
@@ -114,14 +119,14 @@ class Evaluator(object):
         unique_events = set()
         for event in self.events:
             unique_events.add(event['name'])
-        logger.debug('Unique events: {}'.format(unique_events))
+        logger.info('Unique events: {}'.format(unique_events))
 
         for config in self.configs:
             if set(config['events']).issubset(unique_events):
                 logger.debug('Executing commands for %s', config['name'])
                 status = self.check_if_already_executed(name=config['name'])
                 if status == False:
-                    logger.info('Skipping')
+                    logger.debug('Skipping')
                     continue
                 self.execute_commands(config, self.events)
 
