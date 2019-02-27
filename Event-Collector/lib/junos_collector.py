@@ -25,8 +25,6 @@ class JunosCollector(object):
         self.start_monitoring()
 
     def start_monitoring(self):
-        self.interface_status = {}
-
         while True:
             # Interface Status
             device_interface_statuses = self.get_interface_status()
@@ -36,6 +34,10 @@ class JunosCollector(object):
             # BGP Peers
             bgp_down_count = self.get_bgp_peers()
             self.monitor_bgp_peers(bgp_down_count)
+
+            # LDP Neighbors
+            ldp_neighbors = self.get_ldp_session()
+            self.monitor_ldp_session(ldp_neighbors)
 
             time.sleep(30)
 
@@ -125,19 +127,50 @@ class JunosCollector(object):
 
         for dev_name, rpc_reply in rpc_replies.items():
             device_bgp_peer_count[dev_name] = {}
-            peer_count_xpath = rpc_reply.xpath('//bgp-information/peer-count')
-            down_peer_count_xpath = rpc_reply.xpath('//bgp-information/down-peer-count')
+            device_bgp_peer_count[dev_name]['peer-count'] = 0
+            device_bgp_peer_count[dev_name]['down-peer-count'] = 0
 
-            if peer_count_xpath:
-                device_bgp_peer_count[dev_name]['peer-count'] = int(peer_count_xpath[0].text)
-            else:
-                device_bgp_peer_count[dev_name]['peer-count'] = 0
-            if peer_count_xpath:
-                device_bgp_peer_count[dev_name]['down-peer-count'] = int(down_peer_count_xpath[0].text)
-            else:
-                device_bgp_peer_count[dev_name]['down-peer-count'] = 0
+            try:
+                peer_count_xpath = rpc_reply.xpath('//bgp-information/peer-count')
+                down_peer_count_xpath = rpc_reply.xpath('//bgp-information/down-peer-count')
+
+                if peer_count_xpath:
+                    device_bgp_peer_count[dev_name]['peer-count'] = int(peer_count_xpath[0].text)
+                if peer_count_xpath:
+                    device_bgp_peer_count[dev_name]['down-peer-count'] = int(down_peer_count_xpath[0].text)
+            except Exception as e:
+                logger.error(e)
 
         return device_bgp_peer_count
+
+    def get_ldp_session(self):
+        ldp_neighbors = {}
+        rpc_replies = {}
+        to_monitor = ['P1', 'P2', 'P3', 'PE1', 'PE2', 'PE3', 'PE4']
+        for dev_name, connected_dev in self.connected_devices.items():
+            if connected_dev is None:
+                return
+            if dev_name not in to_monitor:
+                continue
+
+            rpc_reply = connected_dev.rpc.get_ldp_session_information()
+            rpc_replies[dev_name] = rpc_reply
+
+        for dev_name, rpc_reply in rpc_replies.items():
+            ldp_neighbors[dev_name] = {}
+            ldp_neighbors[dev_name]['ldp-session-state'] = ''
+            ldp_neighbors[dev_name]['ldp-neighbor-address'] = ''
+            try:
+                ldp_session_xpath = rpc_reply.xpath('//ldp-session-information/ldp-session')
+
+                for ldp_session in ldp_session_xpath:
+                    ldp_neighbors[dev_name]['ldp-session-state'] = ldp_session.xpath('.//ldp-session-state')[0].text
+                    ldp_neighbors[dev_name]['ldp-neighbor-address'] = ldp_session.xpath('.//ldp-neighbor-address')[0].text
+            except Exception as e:
+                logger.error(e)
+
+        return ldp_neighbors
+
 
     def monitor_oper_status(self, interface_status):
         for device_name, interfaces in interface_status.items():
@@ -206,6 +239,24 @@ class JunosCollector(object):
                             }})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
+
+    def monitor_ldp_session(self, ldp_neighbors):
+        for device_name, ldp_neighbor in ldp_neighbors.items():
+            if ldp_neighbor['ldp-session-state'] == 'Operational':
+                event = self._create_event(name='ldp.session.up.{}'.format(device_name),
+                            type='cli',
+                            priority='information',
+                            body={device_name: ldp_neighbor})
+                self.add_event_to_db(event)
+                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
+            else:
+                event = self._create_event(name='ldp.session.down.{}'.format(device_name),
+                            type='cli',
+                            priority='critical',
+                            body={device_name: ldp_neighbor})
+                self.add_event_to_db(event)
+                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
+
 
 if __name__ == '__main__':
     jc = JunosCollector(device_config='../config/devices.yaml')
