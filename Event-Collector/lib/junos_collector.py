@@ -4,6 +4,7 @@ import logging.config
 import sys
 import time
 import uuid
+from copy import deepcopy
 from datetime import datetime
 from pprint import pprint
 
@@ -27,21 +28,25 @@ class JunosCollector(object):
     def start_monitoring(self):
         while True:
             # # Interface Status
-            # device_interface_statuses = self.get_interface_status()
-            # self.monitor_oper_status(device_interface_statuses)
-            # self.monitor_admin_status(device_interface_statuses)
+            device_interface_statuses = self.get_interface_status()
+            self.monitor_oper_status(device_interface_statuses)
+            self.monitor_admin_status(device_interface_statuses)
 
-            # # BGP Peers
-            # bgp_down_count = self.get_bgp_peers()
-            # self.monitor_bgp_peers(bgp_down_count)
+            # BGP Peers
+            bgp_down_count = self.get_bgp_peers()
+            self.monitor_bgp_peers(bgp_down_count)
 
-            # # LDP Neighbors
-            # ldp_neighbors = self.get_ldp_session()
-            # self.monitor_ldp_session(ldp_neighbors)
+            # LDP Neighbors
+            ldp_neighbors = self.get_ldp_session()
+            self.monitor_ldp_session(ldp_neighbors)
 
             # OSPF Neighbors
             ospf_neighbors = self.get_ospf_neighbors()
             self.monitor_ospf_neighbors(ospf_neighbors)
+
+            # PCEP Status
+            pcep_statuses = self.get_pcep_statuses()
+            self.monitor_pcep_statuses(pcep_statuses)
             time.sleep(30)
 
     def add_event_to_db(self, event_msg):
@@ -204,6 +209,41 @@ class JunosCollector(object):
                 logger.error(e)
         return o_ospf_neighbors
 
+    def get_pcep_statuses(self):
+        o_pcep_statuses = {}
+        rpc_replies = {}
+        to_monitor = ['P1', 'P2', 'P3', 'PE1', 'PE2', 'PE3', 'PE4']
+
+        pcep_statuses_template = {}
+        pcep_statuses_template['session-name'] = ''
+        pcep_statuses_template['session-type'] = ''
+        pcep_statuses_template['session-provisioning'] = ''
+        pcep_statuses_template['session-status'] = ''
+
+        for dev_name, connected_dev in self.connected_devices.items():
+            if connected_dev is None:
+                return
+            if dev_name not in to_monitor:
+                continue
+
+            rpc_reply = connected_dev.rpc.get_path_computation_client_status()
+            rpc_replies[dev_name] = rpc_reply
+
+        for dev_name, rpc_reply in rpc_replies.items():
+            try:
+                pcep_status_xpath = rpc_reply.xpath('//path-computation-client-status/pcc-status-sessions/pcc-status-sessions-entry')
+                o_pcep_statuses[dev_name] = []
+                for i, pcep_status in enumerate(pcep_status_xpath):
+                    o_pcep_status = deepcopy(pcep_statuses_template)
+                    o_pcep_status['session-name'] = pcep_status.xpath('.//session-name')[0].text
+                    o_pcep_status['session-type'] = pcep_status.xpath('.//session-type')[0].text
+                    o_pcep_status['session-provisioning'] = pcep_status.xpath('.//session-provisioning')[0].text
+                    o_pcep_status['session-status'] = pcep_status.xpath('.//session-status')[0].text
+                    o_pcep_statuses[dev_name].append(o_pcep_status)
+            except Exception as e:
+                logger.error(e)
+        return o_pcep_statuses
+
     def monitor_oper_status(self, interface_status):
         for device_name, interfaces in interface_status.items():
             oper_status = []
@@ -305,6 +345,30 @@ class JunosCollector(object):
                             body={device_name: ospf_neighbor})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
+
+    def monitor_pcep_statuses(self, pcep_statuses):
+        for device_name, pcep_status in pcep_statuses.items():
+            status = True
+            for pcep_session in pcep_status:
+                if pcep_session['session-status'] != 'Up':
+                    status = False
+                    break
+
+            if status == True:
+                event = self._create_event(name='pcep.status.up.{}'.format(device_name),
+                            type='cli',
+                            priority='information',
+                            body={device_name: pcep_status})
+                self.add_event_to_db(event)
+                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
+            else:
+                event = self._create_event(name='pcep.status.down.{}'.format(device_name),
+                            type='cli',
+                            priority='critical',
+                            body={device_name: pcep_status})
+                self.add_event_to_db(event)
+                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
+
 
 if __name__ == '__main__':
     jc = JunosCollector(device_config='../config/devices.yaml')
