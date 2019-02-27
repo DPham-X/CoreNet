@@ -293,4 +293,4 @@ api.add_resource(DBExecutions, '/executions')
 if __name__ == '__main__':
     db_name = 'core.db'
     db_init(db_name)
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0', debug=True, use_reloader=False)
