@@ -26,19 +26,22 @@ class JunosCollector(object):
 
     def start_monitoring(self):
         while True:
-            # Interface Status
-            device_interface_statuses = self.get_interface_status()
-            self.monitor_oper_status(device_interface_statuses)
-            self.monitor_admin_status(device_interface_statuses)
+            # # Interface Status
+            # device_interface_statuses = self.get_interface_status()
+            # self.monitor_oper_status(device_interface_statuses)
+            # self.monitor_admin_status(device_interface_statuses)
 
-            # BGP Peers
-            bgp_down_count = self.get_bgp_peers()
-            self.monitor_bgp_peers(bgp_down_count)
+            # # BGP Peers
+            # bgp_down_count = self.get_bgp_peers()
+            # self.monitor_bgp_peers(bgp_down_count)
 
-            # LDP Neighbors
-            ldp_neighbors = self.get_ldp_session()
-            self.monitor_ldp_session(ldp_neighbors)
+            # # LDP Neighbors
+            # ldp_neighbors = self.get_ldp_session()
+            # self.monitor_ldp_session(ldp_neighbors)
 
+            # OSPF Neighbors
+            ospf_neighbors = self.get_ospf_neighbors()
+            self.monitor_ospf_neighbors(ospf_neighbors)
             time.sleep(30)
 
     def add_event_to_db(self, event_msg):
@@ -171,6 +174,35 @@ class JunosCollector(object):
 
         return ldp_neighbors
 
+    def get_ospf_neighbors(self):
+        o_ospf_neighbors = {}
+        rpc_replies = {}
+        to_monitor = ['P1', 'P2', 'P3', 'PE1', 'PE2', 'PE3', 'PE4']
+        for dev_name, connected_dev in self.connected_devices.items():
+            if connected_dev is None:
+                return
+            if dev_name not in to_monitor:
+                continue
+
+            rpc_reply = connected_dev.rpc.get_ospf_neighbor_information()
+            rpc_replies[dev_name] = rpc_reply
+
+        for dev_name, rpc_reply in rpc_replies.items():
+            o_ospf_neighbors[dev_name] = {}
+            o_ospf_neighbors[dev_name]['neighbor-address'] = ''
+            o_ospf_neighbors[dev_name]['ospf-neighbor-state'] = ''
+            o_ospf_neighbors[dev_name]['neighbor-id'] = ''
+            o_ospf_neighbors[dev_name]['interface-name'] = ''
+            try:
+                ospf_neighbor_xpath = rpc_reply.xpath('//ospf-neighbor-information/ospf-neighbor')
+                for ospf_neighbor in ospf_neighbor_xpath:
+                    o_ospf_neighbors[dev_name]['neighbor-address'] = ospf_neighbor.xpath('.//neighbor-address')[0].text
+                    o_ospf_neighbors[dev_name]['ospf-neighbor-state'] = ospf_neighbor.xpath('.//ospf-neighbor-state')[0].text
+                    o_ospf_neighbors[dev_name]['neighbor-id'] = ospf_neighbor.xpath('.//neighbor-id')[0].text
+                    o_ospf_neighbors[dev_name]['interface-name'] = ospf_neighbor.xpath('.//interface-name')[0].text
+            except Exception as e:
+                logger.error(e)
+        return o_ospf_neighbors
 
     def monitor_oper_status(self, interface_status):
         for device_name, interfaces in interface_status.items():
@@ -257,6 +289,22 @@ class JunosCollector(object):
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
+    def monitor_ospf_neighbors(self, ospf_neighbors):
+        for device_name, ospf_neighbor in ospf_neighbors.items():
+            if ospf_neighbor['ospf-neighbor-state'] == 'Full':
+                event = self._create_event(name='ospf.neighbors.up.{}'.format(device_name),
+                            type='cli',
+                            priority='information',
+                            body={device_name: ospf_neighbor})
+                self.add_event_to_db(event)
+                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
+            else:
+                event = self._create_event(name='ospf.neighbors.down.{}'.format(device_name),
+                            type='cli',
+                            priority='critical',
+                            body={device_name: ospf_neighbor})
+                self.add_event_to_db(event)
+                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
 if __name__ == '__main__':
     jc = JunosCollector(device_config='../config/devices.yaml')
