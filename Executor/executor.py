@@ -96,4 +96,4 @@ class ExecuteCommands(Resource):
 api.add_resource(ExecuteCommands, '/exec_command')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, port=5001)
+    app.run(host='0.0.0.0', debug=True, port=5001, use_reloader=False)
