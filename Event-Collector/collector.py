@@ -28,20 +28,20 @@ parser = reqparse.RequestParser()
 
 ac = AppformixCollector()
 
-
 class Collector(object):
     def __init__(self):
         threads = []
         jc_thread = threading.Thread(name='JunosCollector', target=JunosCollector, args=('config/devices.yaml',))
+        jc_thread.daemon = True
+
         threads.append(jc_thread)
 
         for thread in threads:
             logger.info('Starting Thread: %s', thread.name)
             thread.start()
 
-        for thread in threads:
-            logger.info('Joining Thread: %s', thread.name)
-            thread.join()
+
+        app.run(host='0.0.0.0', port=5002, debug=True, use_reloader=False)
 
 class AppformixCollectorAPI(Resource):
     def post(self):
@@ -59,5 +59,4 @@ api.add_resource(AppformixCollectorAPI, '/appformix')
 
 
 if __name__ == '__main__':
-    # Collector()
-    app.run(host='0.0.0.0', port=5002, debug=True)
+    Collector()
