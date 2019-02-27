@@ -9,3 +9,9 @@
 - 1: P3 Interface Up
   2: P3 Interface Down
   default: 1
+- 1: P1 BGP Peers Up
+  2: P1 BGP Peers Down
+  default: 1
+- 1: P1 OSPF Interfaces Up
+  2: P1 OSPF Interfaces Down
+  default: 1

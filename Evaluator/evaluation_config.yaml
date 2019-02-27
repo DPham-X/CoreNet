@@ -1,4 +1,4 @@
-
+---
 - name: P1 Interface Down
   events:
     - oper_status.interface.down.P1
@@ -101,3 +101,80 @@
     - type: northstar
       cmd: trigger.optimisation
       args: None
+
+- name: P1 BGP Peers Down
+  events:
+    - bgp.peers.down.P1
+  commands:
+    - type: cli
+      cmd: show bgp summary
+      args: P1
+    - type: cli
+      cmd: show configuration protocols bgp
+      args: P1
+    - type: cli
+      cmd: show bgp neighbor
+      args: P1
+    - type: northstar
+      cmd: create.device.maintenance
+      args: P1
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+- name: P1 BGP Peers Up
+  events:
+    - bgp.peers.up.P1
+  commands:
+    - type: cli
+      cmd: show bgp summary
+      args: P1
+    - type: cli
+      cmd: show bgp neighbor
+      args: P1
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: P1
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: P1 OSPF Interfaces Down
+  events:
+    - ospf.interfaces.down.P1
+  commands:
+    - type: cli
+      cmd: show ospf interface brief
+      args: P1
+    - type: cli
+      cmd: show ospf neighbor
+      args: P1
+    - type: cli
+      cmd: show ospf route
+      args: P1
+    - type: cli
+      cmd: show ospf statistics
+      args: P1
+    - type: northstar
+      cmd: create.device.maintenance
+      args: P1
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: P1 OSPF Interfaces Up
+  events:
+    - ospf.interfaces.up.P1
+  commands:
+    - type: cli
+      cmd: show ospf interface brief
+      args: P1
+    - type: cli
+      cmd: show ospf neighbor
+      args: P1
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: P1
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
