@@ -92,7 +92,8 @@ export default {
         },
         {
           key: 'body',
-          label: 'Description'
+          label: 'Description',
+          formatter: 'convertBreak'
         }
       ],
       totalRows: 50,
@@ -142,6 +143,17 @@ export default {
     },
     getEvents: function () {
       setInterval(this.performSearch, 1000)
+    },
+    convertBreak: function (str) {
+      if (!str) {
+        return '' // don't want `undefined` printing into page
+      }
+      // if it's something other than string, return it as is
+      if (typeof str === 'string') {
+        return '<div class="text-left">' + str.replace(/\n/g, '<br>').replace(/\s/g, '&nbsp') + '</div>'
+      } else {
+        return str
+      }
     },
     convertIsoDate: function (isodate) {
       let date = new Date(isodate)
