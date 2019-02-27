@@ -43,6 +43,8 @@ class JunosCollector(object):
             # OSPF Neighbors
             ospf_neighbors = self.get_ospf_neighbors()
             self.monitor_ospf_neighbors(ospf_neighbors)
+            ospf_interfaces = self.get_ospf_interfaces()
+            self.monitor_ospf_interfaces(ospf_interfaces)
 
             # PCEP Status
             pcep_statuses = self.get_pcep_statuses()
@@ -209,6 +211,41 @@ class JunosCollector(object):
                 logger.error(e)
         return o_ospf_neighbors
 
+
+    def get_ospf_interfaces(self):
+        o_ospf_interfaces = {}
+        rpc_replies = {}
+        to_monitor = ['P1', 'P2', 'P3', 'PE1', 'PE2', 'PE3', 'PE4']
+
+        ospf_interfaces_template = {}
+        ospf_interfaces_template['interface-name'] = ''
+        ospf_interfaces_template['ospf-area'] = ''
+        ospf_interfaces_template['ospf-interface-state'] = ''
+
+        for dev_name, connected_dev in self.connected_devices.items():
+            if connected_dev is None:
+                return
+            if dev_name not in to_monitor:
+                continue
+
+            rpc_reply = connected_dev.rpc.get_ospf_interface_information()
+            rpc_replies[dev_name] = rpc_reply
+
+        for dev_name, rpc_reply in rpc_replies.items():
+            try:
+                ospf_interfaces_xpath = rpc_reply.xpath('//ospf-interface-information/ospf-interface')
+                o_ospf_interfaces[dev_name] = []
+                for i, ospf_interface in enumerate(ospf_interfaces_xpath):
+                    o_ospf_interface = deepcopy(ospf_interfaces_template)
+                    o_ospf_interface['interface-name'] = ospf_interface.xpath('.//interface-name')[0].text
+                    o_ospf_interface['ospf-area'] = ospf_interface.xpath('.//ospf-area')[0].text
+                    o_ospf_interface['ospf-interface-state'] = ospf_interface.xpath('.//ospf-interface-state')[0].text
+                    o_ospf_interfaces[dev_name].append(o_ospf_interface)
+            except Exception as e:
+                logger.error(e)
+
+        return o_ospf_interfaces
+
     def get_pcep_statuses(self):
         o_pcep_statuses = {}
         rpc_replies = {}
@@ -369,6 +406,28 @@ class JunosCollector(object):
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
+    def monitor_ospf_interfaces(self, d_ospf_interfaces):
+        for device_name, ospf_interfaces in d_ospf_interfaces.items():
+            status = True
+            for ospf_interface in ospf_interfaces:
+                if ospf_interface['ospf-interface-state'] == 'Down':
+                    status = False
+                    break
+
+            if status == True:
+                event = self._create_event(name='ospf.interfaces.up.{}'.format(device_name),
+                            type='cli',
+                            priority='information',
+                            body={device_name: ospf_interfaces})
+                self.add_event_to_db(event)
+                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
+            else:
+                event = self._create_event(name='ospf.interfaces.down.{}'.format(device_name),
+                            type='cli',
+                            priority='critical',
+                            body={device_name: ospf_interfaces})
+                self.add_event_to_db(event)
+                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
 if __name__ == '__main__':
     jc = JunosCollector(device_config='../config/devices.yaml')
