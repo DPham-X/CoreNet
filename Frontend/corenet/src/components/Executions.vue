@@ -1,8 +1,6 @@
 <template>
   <div class="body">
     <h1>{{ pagename }}</h1>
-    <input name="search">
-    <button v-on:click="performSearch">Search</button>
     <div class="bottom-pad"></div>
     <div>
       <b-row>
