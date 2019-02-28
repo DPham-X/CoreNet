@@ -38,6 +38,9 @@
           :current-page="currentPage"
           :per-page="perPage"
         >
+          <template slot="name" slot-scope="row">
+            <p class="text-sm-left" style="padding-left: 10px">{{ row.item.name }} </p>
+          </template>
           <template slot="body" slot-scope="row">
             <b-button size="sm" @click="row.toggleDetails" class="mr-2">
               {{ row.detailsShowing ? 'Hide' : 'Show'}} Details
@@ -109,7 +112,7 @@ export default {
         },
         {
           key: 'body',
-          label: 'Description',
+          label: 'Details',
           formatter: 'convertBreak'
         }
       ],

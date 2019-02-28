@@ -38,6 +38,9 @@
           :current-page="currentPage"
           :per-page="perPage"
         >
+          <template slot="name" slot-scope="row">
+            <p class="text-sm-left" style="padding-left: 10px">{{ row.item.name }} </p>
+          </template>
           <span slot="binded_events" slot-scope="data" v-html="data.value"/>
           <span slot="commands" slot-scope="data">
             <template v-for="(command, i) in data.item.commands">
