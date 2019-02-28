@@ -33,6 +33,7 @@
           show-empty
           :items="events"
           :fields="fields"
+          :filter="filter"
           :current-page="currentPage"
           :per-page="perPage"
         >
