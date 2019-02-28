@@ -58,6 +58,7 @@ import axios from 'axios'
 import yaml from 'js-yaml'
 export default {
   name: 'Events',
+  oldEvents: '',
   data () {
     return {
       msg: 'Events',
@@ -104,17 +105,6 @@ export default {
   },
   created () {
     this.getEvents()
-    // this.performSearch()
-  },
-  computed () {
-    // sortOptions() {
-    //   // Create an options list from our fields
-    //   return this.fields
-    //     .filter(f => f.sortable)
-    //     .map(f => {
-    //       return { text: f.label, value: f.key }
-    //     })
-    // }
   },
   methods: {
     performSearch: function () {
@@ -124,14 +114,17 @@ export default {
       axios
         .get(apiLink)
         .then(response => {
-          const oldEvents = this.events
+          this.oldEvents = this.events
+          if (this.oldEvents == null) {
+            this.oldEvents = []
+          }
           this.events = response.data
           for (var i = 0; i < this.events.length; i++) {
             this.$set(this.events[i], '_showDetails', false)
             this.events[i].body = this.toString(this.events[i].body)
-            for (var j = 0; j < oldEvents.length; j++) {
-              if (this.events[i].uuid === oldEvents[j].uuid) {
-                this.events[i]._showDetails = oldEvents[j]._showDetails
+            for (var j = 0; j < this.oldEvents.length; j++) {
+              if (this.events[i].uuid === this.oldEvents[j].uuid) {
+                this.events[i]._showDetails = this.oldEvents[j]._showDetails
               }
             }
           }

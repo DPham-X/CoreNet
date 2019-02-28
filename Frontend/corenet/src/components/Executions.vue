@@ -24,14 +24,14 @@
               <tr :key="command + i">
                 <td align="left" class="font-weight-bold" style="padding: 0; height:100%; width:100%">{{toUpper(command.type)}} -> {{ command.cmd }} </td>
                 <td align="right">
-                  <b-button size="sm" v-b-modal.cmdModal @click="sendCommands(command)"> Output </b-button>
+                  <b-button size="sm" class="btn-xs" v-b-modal.cmdModal @click="sendCommands(command)"> Output </b-button>
                 </td>
               </tr>
             </template>
           </span>
         </b-table>
 
-        <b-modal id="cmdModal" title="Executed command output" size="xl" class="font-black" scrollable=true style="overflow-x:auto; max-width: 100vh">
+        <b-modal id="cmdModal" title="Executed command output" size="xl" class="font-black" style="overflow-x:auto; max-width: 100vh">
           <div class="font-monospace" v-html="commandOutput"></div>
         </b-modal>
 
@@ -59,7 +59,6 @@ export default {
   data () {
     return {
       commandOutput: '',
-      commandArgs: '',
       msg: 'Executions',
       fields: [
         {
@@ -183,8 +182,8 @@ export default {
       for (var i = 0; i < jsonObject.length; i++) {
         let type = jsonObject[i]
 
-      if ('output' in jsonObject[i][type]) {
-            delete jsonObject[i][type]['output']
+        if ('output' in jsonObject[i][type]) {
+          delete jsonObject[i][type]['output']
         }
       }
       return jsonObject
@@ -223,6 +222,12 @@ a {
 }
 .font-black {
   color: #000000;
+}
+.btn-group-xs > .btn, .btn-xs {
+  padding : .25rem .4rem;
+  font-size : .875rem;
+  line-height : .5;
+  border-radius : .2rem;
 }
 </style>
 .modal-header .ok .cancel {
