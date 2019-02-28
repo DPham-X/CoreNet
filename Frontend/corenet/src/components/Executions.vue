@@ -1,9 +1,29 @@
 <template>
   <div class="body">
-    <h1>{{ msg }}</h1>
+    <h1>{{ pagename }}</h1>
     <input name="search">
     <button v-on:click="performSearch">Search</button>
     <div class="bottom-pad"></div>
+    <div>
+      <b-row>
+        <b-col md="3"/>
+        <b-col md="6" class="my-1">
+          <b-form-group label-cols-sm="3" label="Filter" class="mb-0">
+            <b-input-group>
+              <b-form-input v-model="filter" placeholder="Type to Search" />
+                <b-input-group-append>
+                  <b-button :disabled="!filter" @click="filter = ''">Clear</b-button>
+                </b-input-group-append>
+            </b-input-group>
+          </b-form-group>
+        </b-col>
+        <b-col md="3" align="center">
+          <b-form-checkbox switches v-model="status" id="refreshbutton">
+          Enable Automatic Refresh
+        </b-form-checkbox>
+        </b-col>
+      </b-row>
+    </div>
     <div>
       <b-container fluid>
         <b-table
@@ -59,7 +79,9 @@ export default {
   data () {
     return {
       commandOutput: '',
-      msg: 'Executions',
+      pagename: 'Executions',
+      status: false,
+      filter: null,
       fields: [
         {
           key: 'name',
@@ -104,6 +126,9 @@ export default {
   },
   methods: {
     performSearch: function () {
+      if (this.status === false) {
+        return
+      }
       const link = 'http://10.49.227.135:5000/'
       const apiLink = link + 'executions'
 
@@ -190,6 +215,11 @@ export default {
     },
     sendCommands: function (command) {
       this.commandOutput = this.convertBreak(command.output)
+    },
+    onFiltered: function (filteredItems) {
+      // Trigger pagination to update the number of buttons/pages due to filtering
+      this.totalRows = filteredItems.length
+      this.currentPage = 1
     }
   }
 }

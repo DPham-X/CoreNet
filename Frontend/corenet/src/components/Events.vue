@@ -1,13 +1,27 @@
 <template>
   <div class="hello">
-    <h1>{{ msg }}</h1>
+    <h1>{{ pagename }}</h1>
     <div class="bottom-pad"></div>
-
     <div>
-      <input name="search">
-      <button v-on:click="performSearch">Search</button>
+      <b-row>
+        <b-col md="3"/>
+        <b-col md="6" class="my-1">
+          <b-form-group label-cols-sm="3" label="Filter" class="mb-0">
+            <b-input-group>
+              <b-form-input v-model="filter" placeholder="Type to Search" />
+                <b-input-group-append>
+                  <b-button :disabled="!filter" @click="filter = ''">Clear</b-button>
+                </b-input-group-append>
+            </b-input-group>
+          </b-form-group>
+        </b-col>
+        <b-col md="3" align="center">
+          <b-form-checkbox switches v-model="status" id="refreshbutton">
+          Enable Automatic Refresh
+        </b-form-checkbox>
+        </b-col>
+      </b-row>
     </div>
-
     <div class="bottom-pad"></div>
     <div>
       <b-container fluid>
@@ -20,6 +34,7 @@
           show-empty
           :items="events"
           :fields="fields"
+          :filter="filter"
           :current-page="currentPage"
           :per-page="perPage"
         >
@@ -38,7 +53,6 @@
             </b-card>
           </template>
         </b-table>
-
         <div class="mt-3 text-center">
           <b-pagination
             :total-rows="totalRows"
@@ -61,7 +75,9 @@ export default {
   oldEvents: '',
   data () {
     return {
-      msg: 'Events',
+      pagename: 'Events',
+      status: false,
+      filter: null,
       fields: [
         {
           key: 'name',
@@ -108,6 +124,9 @@ export default {
   },
   methods: {
     performSearch: function () {
+      if (this.status === false) {
+        return
+      }
       const link = 'http://10.49.227.135:5000/'
       const apiLink = link + 'get_interface_status'
 

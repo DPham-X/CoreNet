@@ -8,7 +8,9 @@ import App from './App'
 import router from './router'
 import TableComponent from 'vue-table-component'
 import BootstrapVue from 'bootstrap-vue'
+import { FormCheckbox } from 'bootstrap-vue/es/components'
 
+Vue.use(FormCheckbox)
 Vue.use(BootstrapVue)
 Vue.use(TableComponent)
 
