@@ -1,13 +1,16 @@
 import logging
+from datetime import datetime
+
 import yaml
 from jnpr.junos import Device
 from jnpr.junos.exception import ConnectError
-from datetime import datetime
+
+from .conn_device import ConnDevice
 
 logger = logging.getLogger(__name__)
 
 
-class BackupTrigger(object):
+class BackupTrigger(ConnDevice):
     def __init__(self, backup_folder='backups/', *args, **kwargs):
         self.backup_folder = backup_folder
 
