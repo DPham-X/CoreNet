@@ -59,21 +59,22 @@ export default {
   data () {
     return {
       commandOutput: '',
+      commandArgs: '',
       msg: 'Executions',
       fields: [
         {
           key: 'name',
-          label: 'Executed Event',
+          label: 'Execution Name',
           sortable: true
         },
         {
           key: 'binded_events',
-          label: 'Binded Events',
+          label: 'Watched Events',
           formatter: 'toString'
         },
         {
           key: 'commands',
-          label: 'Commands',
+          label: 'Executed Commands',
           formatter: 'toString2'
         },
         {
@@ -180,20 +181,10 @@ export default {
     },
     removeOutput: function (jsonObject) {
       for (var i = 0; i < jsonObject.length; i++) {
-        if ('cli' in jsonObject[i]) {
-          if ('output' in jsonObject[i]['cli']) {
-            delete jsonObject[i]['cli']['output']
-          }
-        }
-        if ('northstar' in jsonObject[i]) {
-          if ('output' in jsonObject[i]['northstar']) {
-            delete jsonObject[i]['northstar']['output']
-          }
-        }
-        if ('junos_backup' in jsonObject[i]) {
-          if ('output' in jsonObject[i]['junos_backup']) {
-            delete jsonObject[i]['junos_backup']['output']
-          }
+        let type = jsonObject[i]
+
+      if ('output' in jsonObject[i][type]) {
+            delete jsonObject[i][type]['output']
         }
       }
       return jsonObject
