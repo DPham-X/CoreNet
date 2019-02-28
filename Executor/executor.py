@@ -9,9 +9,9 @@ import requests
 from flask import Flask, json, request
 from flask_restful import Api, Resource, reqparse
 
-from lib.junos_cli_trigger import JunosCliTrigger
 from lib.northstar_trigger import NorthstarTrigger
-from lib.backup_trigger import BackupTrigger
+from lib.junos_cli_trigger import JunosCliTrigger
+from lib.junos_backup_trigger import BackupTrigger
 from lib.junos_trigger import JunosTrigger
 
 handler = logging.StreamHandler()
@@ -28,6 +28,10 @@ ns_logger.addHandler(handler)
 jcli_logger = logging.getLogger('lib.junos_cli_trigger')
 jcli_logger.setLevel(logging.DEBUG)
 jcli_logger.addHandler(handler)
+
+jbt_logger = logging.getLogger('lib.junos_backup_trigger')
+jbt_logger.setLevel(logging.DEBUG)
+jbt_logger.addHandler(handler)
 
 jt_logger = logging.getLogger('lib.junos_trigger')
 jt_logger.setLevel(logging.DEBUG)

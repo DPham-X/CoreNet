@@ -126,9 +126,6 @@
       cmd: show bgp neighbor
       args: P1
     - type: northstar
-      cmd: create.device.maintenance
-      args: P1
-    - type: northstar
       cmd: trigger.optimisation
       args: None
 - name: P1 BGP Peers Up
@@ -140,9 +137,6 @@
       args: P1
     - type: cli
       cmd: show bgp neighbor
-      args: P1
-    - type: northstar
-      cmd: delete.device.maintenance
       args: P1
     - type: northstar
       cmd: trigger.optimisation

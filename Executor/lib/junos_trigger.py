@@ -7,9 +7,9 @@ from .conn_device import ConnDevice
 logger = logging.getLogger(__name__)
 
 class JunosTrigger(ConnDevice):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         logger.info('Started JunosTrigger')
-        super(JunosTrigger, self).__init__()
+        super(JunosTrigger, self).__init__(*args, **kwargs)
 
     def _load_config(self, device_name, config_name):
         dev = self.connected_devices[device_name]
