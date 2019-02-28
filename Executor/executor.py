@@ -12,6 +12,7 @@ from flask_restful import Api, Resource, reqparse
 from lib.junos_cli_trigger import JunosCliTrigger
 from lib.northstar_trigger import NorthstarTrigger
 from lib.backup_trigger import BackupTrigger
+from lib.junos_trigger import JunosTrigger
 
 handler = logging.StreamHandler()
 handler.setLevel(logging.INFO)
@@ -28,6 +29,10 @@ jcli_logger = logging.getLogger('lib.junos_cli_trigger')
 jcli_logger.setLevel(logging.DEBUG)
 jcli_logger.addHandler(handler)
 
+jt_logger = logging.getLogger('lib.junos_trigger')
+jt_logger.setLevel(logging.DEBUG)
+jt_logger.addHandler(handler)
+
 app = Flask(__name__)
 api = Api(app)
 parser = reqparse.RequestParser()
@@ -35,7 +40,7 @@ parser = reqparse.RequestParser()
 ns = NorthstarTrigger()
 jcli = JunosCliTrigger()
 bt = BackupTrigger()
-
+jt = JunosTrigger()
 
 class ExecuteCommands(Resource):
     def post(self):
@@ -49,10 +54,10 @@ class ExecuteCommands(Resource):
         time = datetime.now().isoformat()
         status = 'Completed'
         new_uuid = str(uuid.uuid4())
-        output = ''
         python_commands = json.loads(commands)
         for i, command in enumerate(python_commands):
             try:
+                output = ''
                 if 'cli' == command['type']:
                     logger.info('Found CLI command')
                     output = jcli.execute(command)
@@ -65,6 +70,10 @@ class ExecuteCommands(Resource):
                     logger.info('Found JunosBackup command')
                     output = bt.execute(command, new_uuid)
                     type = 'junos_backup'
+                elif 'junos' == command['type']:
+                    logger.info('Found JunosTrigger command')
+                    output = jt.execute(command)
+                    type = 'junos'
                 else:
                     logger.error('Command type not supported: %s', command['type'])
                     status = 'Failed'
@@ -72,11 +81,18 @@ class ExecuteCommands(Resource):
             except KeyError as e:
                 logger.error('An error occurred %s', e)
                 status = 'Failed'
+                python_commands[i]['output'] = 'An error occured'
+                break
             else:
-                if not output:
-                    continue
-                logger.debug(output)
                 python_commands[i]['output'] = str(output)
+
+                if not output:
+                    status = 'Failed'
+                    python_commands[i]['output'] = 'An error occured'
+
+                if status == 'Failed':
+                    break
+
 
         headers = {
             'Content-Type': 'application/json'

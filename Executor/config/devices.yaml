@@ -27,7 +27,3 @@ devices:
     ip: 10.49.225.241
     user: northstar
     password: Juniper123!
-  - name: jvm
-    ip: 10.49.227.134
-    user: root
-    password: Juniper123!
