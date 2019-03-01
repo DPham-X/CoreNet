@@ -129,7 +129,7 @@ export default {
         return
       }
       const link = 'http://10.49.227.135:5000/'
-      const apiLink = link + 'get_interface_status'
+      const apiLink = link + 'get_events_last'
 
       axios
         .get(apiLink)

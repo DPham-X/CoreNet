@@ -131,7 +131,7 @@ export default {
         return
       }
       const link = 'http://10.49.227.135:5000/'
-      const apiLink = link + 'executions'
+      const apiLink = link + 'get_executions_last'
 
       axios
         .get(apiLink)
