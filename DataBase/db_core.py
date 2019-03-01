@@ -1,184 +1,115 @@
-from flask import Flask, json, request
-from flask_sqlalchemy import SQLAlchemy
-from flask_restful import Resource, Api, reqparse
-from flask_cors import CORS
+import logging
 from glob import glob
-from sqlalchemy.exc import IntegrityError, OperationalError
-from sqlalchemy.orm.attributes import QueryableAttribute
-import ast
 
+from flask import Flask, json, request
+from flask_cors import CORS
+from flask_restful import Api, Resource, reqparse
+from flask_sqlalchemy import SQLAlchemy
+from gevent.pywsgi import WSGIServer
+from sqlalchemy.exc import IntegrityError, OperationalError
+
+from db_models import Event, Execution
+
+# Constants
+DATABASE_NAME = 'core.db'
+HOST = '0.0.0.0'
+DB_PORT = 5000
+
+# Flask settings
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///core.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{}'.format(DATABASE_NAME)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 api = Api(app)
 CORS(app)
 
+# API Parsing
 parser = reqparse.RequestParser()
 
+# Logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
-class Event(db.Model):
-    uuid = db.Column(db.String(37), unique=True, primary_key=True, nullable=False)
-    time = db.Column(db.String(27), nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    type = db.Column(db.String(20), nullable=False)
-    priority = db.Column(db.String(20), nullable=True)
-    body = db.Column(db.String(100000), nullable=True)
+handler = logging.StreamHandler()
+handler.setLevel(logging.DEBUG)
 
-    # def to_dict(self, show=None, _hide=[], _path=None):
-    #     """Return a dictionary representation of this model."""
+logger.addHandler(handler)
 
-    #     show = show or []
 
-    #     hidden = self._hidden_fields if hasattr(self, "_hidden_fields") else []
-    #     default = self._default_fields if hasattr(self, "_default_fields") else []
-    #     default.extend(['uuid', 'time', 'name', 'type', 'priority', 'body'])
+def initialise_db(db_name):
+    """Creates a new database if an existing one cannot be found
 
-    #     if not _path:
-    #         _path = self.__tablename__.lower()
+    :param db_name: Filename of the database
+    :type db_name: str
+    """
+    if db_name not in glob('*'):
+        logger.info('Creating new database \'%s\'', db_name)
+        db.create_all()
+    else:
+        logger.info('Existing database \'%s\' already exists', db_name)
 
-    #         def prepend_path(item):
-    #             item = item.lower()
-    #             if item.split(".", 1)[0] == _path:
-    #                 return item
-    #             if len(item) == 0:
-    #                 return item
-    #             if item[0] != ".":
-    #                 item = ".%s" % item
-    #             item = "%s%s" % (_path, item)
-    #             return item
+def add_event_to_db(event):
+    """Adds and commits new entries into the core databse
 
-    #         _hide[:] = [prepend_path(x) for x in _hide]
-    #         show[:] = [prepend_path(x) for x in show]
+    :param event: Database model that has been filled out
+    :type event: db.model object
+    """
+    try:
+        db.session.add(event)
+        db.session.commit()
+    except IntegrityError as e:
+        logger.error('UUID might already be in the database (ignoring)\n %s', e)
+        db.session.rollback()
+        return False
+    else:
+        logging.info('Sucessfully added {}'.format(event.uuid))
+    return True
 
-    #     columns = self.__table__.columns.keys()
-    #     relationships = self.__mapper__.relationships.keys()
-    #     properties = dir(self)
-
-    #     ret_data = {}
-
-    #     for key in columns:
-    #         if key.startswith("_"):
-    #             continue
-    #         check = "%s.%s" % (_path, key)
-    #         if check in _hide or key in hidden:
-    #             continue
-    #         if check in show or key in default:
-    #             ret_data[key] = getattr(self, key)
-
-    #     for key in relationships:
-    #         if key.startswith("_"):
-    #             continue
-    #         check = "%s.%s" % (_path, key)
-    #         if check in _hide or key in hidden:
-    #             continue
-    #         if check in show or key in default:
-    #             _hide.append(check)
-    #             is_list = self.__mapper__.relationships[key].uselist
-    #             if is_list:
-    #                 items = getattr(self, key)
-    #                 if self.__mapper__.relationships[key].query_class is not None:
-    #                     if hasattr(items, "all"):
-    #                         items = items.all()
-    #                 ret_data[key] = []
-    #                 for item in items:
-    #                     ret_data[key].append(
-    #                         item.to_dict(
-    #                             show=list(show),
-    #                             _hide=list(_hide),
-    #                             _path=("%s.%s" % (_path, key.lower())),
-    #                         )
-    #                     )
-    #             else:
-    #                 if (
-    #                     self.__mapper__.relationships[key].query_class is not None
-    #                     or self.__mapper__.relationships[key].instrument_class
-    #                     is not None
-    #                 ):
-    #                     item = getattr(self, key)
-    #                     if item is not None:
-    #                         ret_data[key] = item.to_dict(
-    #                             show=list(show),
-    #                             _hide=list(_hide),
-    #                             _path=("%s.%s" % (_path, key.lower())),
-    #                         )
-    #                     else:
-    #                         ret_data[key] = None
-    #                 else:
-    #                     ret_data[key] = getattr(self, key)
-
-    #     for key in list(set(properties) - set(columns) - set(relationships)):
-    #         if key.startswith("_"):
-    #             continue
-    #         if not hasattr(self.__class__, key):
-    #             continue
-    #         attr = getattr(self.__class__, key)
-    #         if not (isinstance(attr, property) or isinstance(attr, QueryableAttribute)):
-    #             continue
-    #         check = "%s.%s" % (_path, key)
-    #         if check in _hide or key in hidden:
-    #             continue
-    #         if check in show or key in default:
-    #             val = getattr(self, key)
-    #             if hasattr(val, "to_dict"):
-    #                 ret_data[key] = val.to_dict(
-    #                     show=list(show),
-    #                     _hide=list(_hide),
-    #                     _path=("%s.%s" % (_path, key.lower())),
-    #                 )
-    #             else:
-    #                 try:
-    #                     ret_data[key] = json.loads(json.dumps(val))
-    #                 except:
-    #                     pass
-
-    #     return ret_data
-
-    def __repr__(self):
-        output_format = '{}: {} - {}'
-        return output_format.format(self.uuid, self.time, self.name)
-
-class Execution(db.Model):
-    uuid = db.Column(db.String(37), unique=True, primary_key=True, nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    binded_events = db.Column(db.String(1000), nullable=False)
-    time = db.Column(db.String(27), nullable=False)
-    commands = db.Column(db.String(100000), nullable=True)
-    status = db.Column(db.String(20), nullable=True)
-
-    def __repr__(self):
-        output_format = '{}: {} - {}'
-        return output_format.format(self.uuid, self.time, self.name)
 
 class DBCreateEvent(Resource):
     def post(self):
+        """POST method for storing new Event entries into the database
+
+        :param uuid: UUID of the new Event
+        :param time: Timestamp of when the Event occured in UTC
+        :param name: Name of the Event which occured
+        :param type: Type of Event which occured (eg. CLI/APPFORMIX)
+        :param priority: Priority of the Event (eg. INFORMATION/WARNING/CRITICAL)
+        :param body: Any other extra information related to the Event
+
+        :return: A Success message if the Event was added or an Error otherwise
+        """
         parser.add_argument('uuid', type=str)
         parser.add_argument('time', type=str)
         parser.add_argument('name', type=str)
         parser.add_argument('type', type=str)
         parser.add_argument('priority', type=str)
         parser.add_argument('body', type=str)
-
         args = parser.parse_args()
+
         new_event = Event(uuid=str(args['uuid']),
                           time=str(args['time']),
                           name=str(args['name']),
                           type=str(args['type']),
                           priority=str(args['priority']),
                           body=str(args['body']))
-        # print(repr(json.dumps(str(args['body']))))
         status = add_event_to_db(new_event)
         if not status:
             return {'Error': 'Could not add event to database'}, 400
         return {'Success': 'New event added with id {}'.format(args['uuid'])}, 201
 
-class DBQuery(Resource):
+
+class DBGetEventsLast(Resource):
     def get(self):
-        # Get most recent query
+        """GET method that retrieves the 50 most recent Events
+
+        :return: A list of Events"""
+        output = []
         try:
             queries = Event.query.order_by(Event.time.desc()).limit(50)
         except OperationalError:
             return {'Error': 'Database is currently empty'}, 400
-        output = []
+
         for query in queries:
             query_serialised = {
                 'uuid': query.uuid,
@@ -191,8 +122,19 @@ class DBQuery(Resource):
             output.append(query_serialised)
         return output, 200, {'Access-Control-Allow-Origin': '*'}
 
-class DBGetEvent(Resource):
+
+class DBGetEventsInterval(Resource):
     def get(self):
+        """GET method which retrieves the events for the period between start
+        and end time
+
+        :param start_time: The starting timestamp
+        :type start_time: datestring object converted to int with msec
+        :param end_time: The final timestamp
+        :type end_time: datestring object converted to int with msec
+
+        :return: A list of Events
+        """
         start_time = request.args.get('start_time')
         end_time = request.args.get('end_time')
         if start_time is None:
@@ -200,43 +142,40 @@ class DBGetEvent(Resource):
         if end_time is None:
             return {'Error': 'end_time has not been defined'}, 400
 
-        queries = Event.query.filter(Event.time.between(start_time, end_time)).all()
-        if not queries:
-            return {'Error': 'Bad request'}, 400
-        output = []
-        for query in queries:
-            query_serialised = {
-                'uuid': query.uuid,
-                'time': query.time,
-                'name': query.name,
-                'type': query.type,
-                'priority': query.priority,
-                'body': json.loads(query.body)
-            }
-            output.append(query_serialised)
-        return output, 200, {'Access-Control-Allow-Origin': '*'}
-
-class DBExecutions(Resource):
-    def get(self):
-        # Get most recent query
         try:
-            queries = Execution.query.order_by(Execution.time.desc()).limit(20)
-        except OperationalError:
-            return {'Error': 'Database is currently empty'}, 400
-        output = []
-        for query in queries:
-            query_serialised = {
-                'uuid': query.uuid,
-                'name': query.name,
-                'binded_events': json.loads(query.binded_events),
-                'time': query.time,
-                'commands': json.loads(query.commands),
-                'status': query.status,
-            }
-            output.append(query_serialised)
+            queries = Event.query.filter(Event.time.between(start_time, end_time)).all()
+            if not queries:
+                return {'Info': 'Could not find any events for the defined interval'}, 200
+            output = []
+            for query in queries:
+                query_serialised = {
+                    'uuid': query.uuid,
+                    'time': query.time,
+                    'name': query.name,
+                    'type': query.type,
+                    'priority': query.priority,
+                    'body': json.loads(query.body)
+                }
+                output.append(query_serialised)
+        except Exception as e:
+            return {'Error': str(e)}, 400, {'Access-Control-Allow-Origin': '*'}
         return output, 200, {'Access-Control-Allow-Origin': '*'}
 
+
+class DBCreateExecution(Resource):
     def post(self):
+        """POST method for creating a new Execution entry in the database
+
+        :param uuid: UUID of the new Execution
+        :param name: Name of the Execution which occured
+        :param binded_events: Events that triggered the Execution
+        :param time: Timestamp of when the Execution occured in UTC
+        :param commands: Contains all the commands the were executed, their arguments
+                         and their output
+        :param status: Final status of the Execution (eg. Completed/Failed)
+
+        :return: A Success message if the Execution was added or an Error otherwise
+        """
         parser.add_argument('uuid', type=str)
         parser.add_argument('name', type=str)
         parser.add_argument('binded_events', type=str)
@@ -258,39 +197,41 @@ class DBExecutions(Resource):
             return {'Error': 'Could not add execution to database'}, 400
         return {'Success': 'New execution added with id {}'.format(args['uuid'])}, 201
 
-def db_init(name):
-    files = glob('*')
-    if db_name not in files:
-        print('Creating {}'.format(name))
-        db.create_all()
 
-def create_test_event(uuid):
-    test_event = Event(uuid=uuid,
-                       time='2019-02-16 12:29:15.451744',
-                       name='Get interface status',
-                       type='CLI',
-                       priority='Critical',
-                       body='{"key": "value"}')
-    add_event_to_db(test_event)
+class DBGetExecutionsLast(Resource):
+    def get(self):
+        """GET method for retrieving the 20 most recent Executions
 
-def add_event_to_db(event):
-    try:
-        db.session.add(event)
-        db.session.commit()
-    except IntegrityError:
-        print('uuid already in database... ignoring')
-        db.session.rollback()
-        return False
-    else:
-        print('Sucessfully added {}'.format(event.uuid))
-    return True
+        :return: a list of Executions
+        """
+        try:
+            queries = Execution.query.order_by(Execution.time.desc()).limit(20)
+        except OperationalError:
+            return {'Error': 'Database is currently empty'}, 400
+        output = []
+        for query in queries:
+            query_serialised = {
+                'uuid': query.uuid,
+                'name': query.name,
+                'binded_events': json.loads(query.binded_events),
+                'time': query.time,
+                'commands': json.loads(query.commands),
+                'status': query.status,
+            }
+            output.append(query_serialised)
+        return output, 200, {'Access-Control-Allow-Origin': '*'}
 
-api.add_resource(DBQuery, '/get_interface_status')
-api.add_resource(DBCreateEvent, '/create_event')
-api.add_resource(DBGetEvent, '/get_events')
-api.add_resource(DBExecutions, '/executions')
+# Routes for the database API
+# Events
+api.add_resource(DBCreateEvent,          '/create_event')
+api.add_resource(DBGetEventsLast,        '/get_events_last')
+api.add_resource(DBGetEventsInterval,    '/get_events_interval')
+# Executions
+api.add_resource(DBCreateExecution,      '/create_execution')
+api.add_resource(DBGetExecutionsLast,    '/get_executions_last')
 
 if __name__ == '__main__':
-    db_name = 'core.db'
-    db_init(db_name)
-    app.run(host='0.0.0.0', debug=True, use_reloader=False)
+    initialise_db(DATABASE_NAME)
+    logger.info('Starting WSGI Server %s:%s', HOST, DB_PORT)
+    http_server = WSGIServer((HOST, DB_PORT), app)
+    http_server.serve_forever()
