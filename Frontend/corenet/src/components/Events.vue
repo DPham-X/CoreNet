@@ -6,14 +6,12 @@
       <b-row>
         <b-col md="3"/>
         <b-col md="6" class="my-1">
-          <b-form-group label-cols-sm="3" label="Filter" class="mb-0">
             <b-input-group>
               <b-form-input v-model="filter" placeholder="Type to Search" />
                 <b-input-group-append>
                   <b-button :disabled="!filter" @click="filter = ''">Clear</b-button>
                 </b-input-group-append>
             </b-input-group>
-          </b-form-group>
         </b-col>
         <b-col md="3" align="center">
           <b-form-checkbox switches v-model="status" id="refreshbutton">
