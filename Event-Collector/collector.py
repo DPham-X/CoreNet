@@ -9,6 +9,20 @@ from flask_restful import Api, Resource, reqparse
 from lib.appformix_collector import AppformixCollector
 from lib.junos_collector import JunosCollector
 
+
+# Constants
+HOST = '0.0.0.0'
+COLLECTOR_PORT = 5002
+DEVICE_CONFIG = 'config/devices.yaml'
+
+# API Parsing
+parser = reqparse.RequestParser()
+
+# Flask Settings
+app = Flask(__name__)
+api = Api(app)
+
+# Logging
 handler = logging.StreamHandler()
 handler.setLevel(logging.DEBUG)
 
@@ -20,18 +34,19 @@ jc_logger = logging.getLogger('lib.junos_collector')
 jc_logger.setLevel(logging.DEBUG)
 jc_logger.addHandler(handler)
 
-
-app = Flask(__name__)
-api = Api(app)
-
-parser = reqparse.RequestParser()
-
+# Init modules
 ac = AppformixCollector()
 
 class Collector(object):
     def __init__(self):
+        """Instantiates Collector modules in separate threads to monitor data
+
+        Modules
+        -------
+        JunosCollector: Monitor Junos network device statuses
+        """
         threads = []
-        jc_thread = threading.Thread(name='JunosCollector', target=JunosCollector, args=('config/devices.yaml',))
+        jc_thread = threading.Thread(name='JunosCollector', target=JunosCollector, args=(DEVICE_CONFIG,))
         jc_thread.daemon = True
 
         threads.append(jc_thread)
@@ -41,10 +56,18 @@ class Collector(object):
             thread.start()
 
 
-        app.run(host='0.0.0.0', port=5002, debug=True, use_reloader=False)
+        app.run(host=HOST, port=COLLECTOR_PORT, debug=False, use_reloader=False)
 
 class AppformixCollectorAPI(Resource):
     def post(self):
+        """POST method for AppFormix API interfacing. This will serve as the
+        endpoint for an AppFormix webhook, parsing any events/alarms and storing them
+        in the database
+
+        :param status: AppFormix status containing details of the notification
+        :param spec: AppFormix spec which has details on the specific rule which caused the notification
+        :param kind: AppFormix kind which defines the type of notification (Event/Alarm)
+        """
         parser.add_argument('status', type=str, location= 'json')
         parser.add_argument('spec', type=str, location= 'json')
         parser.add_argument('kind', type=str, location= 'json')
@@ -55,8 +78,8 @@ class AppformixCollectorAPI(Resource):
         kind = str(args.kind)
         ac.send_event(status, spec, kind)
 
+# Routes for the Collector API
 api.add_resource(AppformixCollectorAPI, '/appformix')
-
 
 if __name__ == '__main__':
     Collector()
