@@ -20,15 +20,22 @@ logger = logging.getLogger(__name__)
 
 
 class JunosCollector(object):
-    def __init__(self, device_config):
-        """ Junos RPC information collector """
+    def __init__(self, config_path):
+        """Collector module for Junos RPC information, statistics and status
+
+        :param config_path: Location of the credentials for each network device
+        :type config_path: str
+        """
         self.connected_devices = {}
         self.network_devices = {}
         self.db_event_endpoint = '{}:{}/create_event'.format(DATABASE_URL, DATABASE_PORT)
-        self._import_network_devices(device_config)
+        self._import_network_devices(config_path)
         self.start_monitoring()
 
     def start_monitoring(self):
+        """Monitoring loop which collects information from each device
+        for a specified interval
+        """
         while True:
             # # Interface Status
             device_interface_statuses = self.get_interface_status()
@@ -55,12 +62,23 @@ class JunosCollector(object):
             time.sleep(30)
 
     def add_event_to_db(self, event_msg):
+        """Sends collected information as events to the Database endpoint
+
+        :param event_msg: Event message that is compatible with the Database schema
+        :type event_msg: dict
+        """
         headers = {
             'Content-Type': 'application/json',
         }
         requests.post(self.db_event_endpoint, json=event_msg, headers=headers)
 
     def _import_network_devices(self, network_device_file):
+        """Import the hostnames, username and password for each network device
+        and connect to the device
+
+        :param network_device_file: Location of the credentials for each network device
+        :type network_device_file: str
+        """
         logger.debug('Loading network devices into JunosCollector')
         with open(network_device_file, 'r') as f:
             import_devices = yaml.load(f.read())
@@ -73,6 +91,12 @@ class JunosCollector(object):
             self._connect_to_device(device)
 
     def _connect_to_device(self, device):
+        """Connects to the network device via Netconf
+
+        :param device: Contains the necessary information to connect to the device
+        :type device: dict
+        :raises ConnectError: When a connection can not be establish to the device
+        """
         try:
             logger.debug('Connecting to %s', device['ip'])
             dev = Device(host=device['ip'], user=device['user'], password=device['password']).open()
@@ -84,6 +108,19 @@ class JunosCollector(object):
             self.connected_devices[device['name']] = dev
 
     def _create_event(self, name, type, priority, body):
+        """Serialises an Event object that conforms with the Event Database schema
+
+        :param name: Name of the Event
+        :type name: str
+        :param type  Type of Event (eg. CLI/APPFORMIX)
+        :type type: str
+        :param priority: Priority of the Event (eg. INFORMATION/WARNING/CRITICAL)
+        :type priority: str
+        :param body: Any other extra information related to the Event
+        :type body: dict
+        :return: An Event Database compatible object
+        :rtype: dict
+        """
         event = {
             'uuid': str(uuid.uuid4()),
             'time': str(datetime.now().isoformat()),
