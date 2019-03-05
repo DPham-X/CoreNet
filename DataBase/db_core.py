@@ -15,7 +15,7 @@ DATABASE_NAME = 'core.db'
 HOST = '0.0.0.0'
 DB_PORT = 5000
 
-# Flask settings
+# Flask Settings
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{}'.format(DATABASE_NAME)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -129,9 +129,9 @@ class DBGetEventsInterval(Resource):
         and end time
 
         :param start_time: The starting timestamp
-        :type start_time: datestring object converted to int with msec
+        :type start_time: datestring object that was converted to int with msec
         :param end_time: The final timestamp
-        :type end_time: datestring object converted to int with msec
+        :type end_time: datestring object that was converted to int with msec
 
         :return: A list of Events
         """
@@ -221,7 +221,7 @@ class DBGetExecutionsLast(Resource):
             output.append(query_serialised)
         return output, 200, {'Access-Control-Allow-Origin': '*'}
 
-# Routes for the database API
+# Routes for the Database API
 # Events
 api.add_resource(DBCreateEvent,          '/create_event')
 api.add_resource(DBGetEventsLast,        '/get_events_last')
