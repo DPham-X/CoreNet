@@ -1,11 +1,7 @@
-import json
 import logging
-import sys
 from datetime import datetime, timedelta
 import yaml
-from time import sleep
 import requests
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 # Constants
 NORTHSTAR_AUTH = 'config/auth.yaml'
@@ -41,10 +37,14 @@ class NorthstarTrigger(object):
 
         :raises ConnectionError: When there is a problem in connecting to the Authentication API
         """
-        payload = {'grant_type': 'password','username': self.username,'password': self.password}
+        payload = {
+            'grant_type': 'password',
+            'username': self.username,
+            'password': self.password
+        }
         token_url = self.base_url + '/oauth2/token'
         logger.info('Connecting to {} with username: {}'.format(self.base_url, self.username))
-        r = requests.post(token_url, data=payload, verify=self.verify ,auth=(self.username, self.password))
+        r = requests.post(token_url, data=payload, verify=self.verify, auth=(self.username, self.password))
 
         try:
             assert r.status_code == 200
@@ -94,7 +94,7 @@ class NorthstarTrigger(object):
             assert r.status_code == 200
             topology_information = r.json()
         except IndexError as e:
-            raise ConnectionError('Could not get NorthStar topology elements')
+            raise ConnectionError('Could not get NorthStar topology elements. {}'.format(e))
 
         logger.debug('Received the following nodes:')
         logger.debug([node['hostName'] for node in topology_information])
@@ -123,7 +123,7 @@ class NorthstarTrigger(object):
             assert r.status_code == 200
             link_information = r.json()
         except IndexError as e:
-            raise ConnectionError('Could not get NorthStar links')
+            raise ConnectionError('Could not get NorthStar links. {}'.format(e))
 
         logger.debug('Received the following links:')
         logger.debug([link['id'] for link in link_information])

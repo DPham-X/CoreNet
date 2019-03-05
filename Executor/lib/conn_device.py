@@ -2,7 +2,6 @@ import logging
 import yaml
 from jnpr.junos import Device
 from jnpr.junos.exception import ConnectError
-from datetime import datetime
 
 # Logging
 logger = logging.getLogger(__name__)

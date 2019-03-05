@@ -1,10 +1,6 @@
 import logging
 from datetime import datetime
 
-import yaml
-from jnpr.junos import Device
-from jnpr.junos.exception import ConnectError
-
 from .conn_device import ConnDevice
 
 # Logging
@@ -43,7 +39,7 @@ class BackupTrigger(ConnDevice):
 
         logger.info('Executing CLI command: %s', command)
         output = dev.cli(command)
-        date = datetime.now().isoformat().replace(':','_')
+        date = datetime.now().isoformat().replace(':', '_')
         filename = '{}/config_{}_{}.conf'.format(self.backup_folder, date, uuid)
         # Save configuration
         with open(filename, 'w') as f:
@@ -65,7 +61,7 @@ class BackupTrigger(ConnDevice):
         :return: Output of the command that was executed
         :rtype: str
         """
-        command  = vars['cmd']
+        command = vars['cmd']
         args = vars['args']
 
         if 'backup.config' == command:

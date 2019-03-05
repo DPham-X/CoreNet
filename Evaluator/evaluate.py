@@ -81,7 +81,7 @@ class Link(object):
         :return: The status for the input event, [True] if its no active and
                  [False] otherwise
         """
-        if self.links[event_name] == False:
+        if self.links[event_name] is False:
             self.links[event_name] = True
             other_link = self._get_other_event(self.links, event_name)
             self.links[other_link] = False
@@ -115,8 +115,8 @@ class Evaluator(object):
         self._import_links()
 
         # Starting execution delta of 0
-        interval_s = datetime(1,1,1)
-        interval_e = datetime(1,1,1)
+        interval_s = datetime(1, 1, 1)
+        interval_e = datetime(1, 1, 1)
         evaluation_duration = interval_s - interval_e
 
         while True:
@@ -159,11 +159,10 @@ class Evaluator(object):
             raise FileNotFoundError('Could not load config')
 
         for e_link in e_links:
-            l = Link(e_link)
+            link = Link(e_link)
             logger.info('Imported Link: %s <-> %s', e_link[1], e_link[2])
-            self.links[e_link[1]] = l
-            self.links[e_link[2]] = l
-
+            self.links[e_link[1]] = link
+            self.links[e_link[2]] = link
 
     def _get_events(self, start_time, end_time):
         """REST call to the database to retrieve a list of events for a

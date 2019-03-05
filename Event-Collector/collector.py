@@ -1,9 +1,8 @@
 import ast
 import logging
-import sys
 import threading
 
-from flask import Flask, json, request
+from flask import Flask
 from flask_restful import Api, Resource, reqparse
 
 from lib.appformix_collector import AppformixCollector
@@ -37,6 +36,7 @@ jc_logger.addHandler(handler)
 # Init modules
 ac = AppformixCollector()
 
+
 class Collector(object):
     def __init__(self):
         """Instantiates Collector modules in separate threads to monitor data
@@ -56,6 +56,7 @@ class Collector(object):
             thread.start()
 
         app.run(host=HOST, port=COLLECTOR_PORT, debug=False, use_reloader=False)
+
 
 class AppformixCollectorAPI(Resource):
     def post(self):
@@ -77,8 +78,10 @@ class AppformixCollectorAPI(Resource):
         kind = str(args.kind)
         ac.send_event(status, spec, kind)
 
+
 # Routes for the Collector API
 api.add_resource(AppformixCollectorAPI, '/appformix')
+
 
 if __name__ == '__main__':
     Collector()

@@ -3,10 +3,6 @@ import re
 import warnings
 
 import cryptography
-import yaml
-from cryptography import utils
-from jnpr.junos import Device
-from jnpr.junos.exception import ConnectError
 from jnpr.junos.utils.start_shell import StartShell
 
 from .conn_device import ConnDevice
@@ -70,6 +66,7 @@ class JunosCliTrigger(ConnDevice):
         output = self.run_junos_cli_cmd(command, args)
 
         return output
+
 
 if __name__ == '__main__':
     # Example

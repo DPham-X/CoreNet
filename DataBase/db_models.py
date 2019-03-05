@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
+
 class Event(db.Model):
     """Event model for the database"""
     uuid = db.Column(db.String(37), unique=True, primary_key=True, nullable=False)
@@ -14,6 +15,7 @@ class Event(db.Model):
     def __repr__(self):
         output_format = '{}: {} - {}'
         return output_format.format(self.uuid, self.time, self.name)
+
 
 class Execution(db.Model):
     """Execution model for the database"""

@@ -48,6 +48,7 @@ def initialise_db(db_name):
     else:
         logger.info('Existing database \'%s\' already exists', db_name)
 
+
 def add_event_to_db(event):
     """Adds and commits new entries into the core databse
 
@@ -186,11 +187,11 @@ class DBCreateExecution(Resource):
         args = parser.parse_args()
 
         new_event = Execution(uuid=str(args['uuid']),
-                                name=str(args['name']),
-                                binded_events=str(args['binded_events']),
-                                time=str(args['time']),
-                                status=str(args['status']),
-                                commands=str(args['commands']))
+                              name=str(args['name']),
+                              binded_events=str(args['binded_events']),
+                              time=str(args['time']),
+                              status=str(args['status']),
+                              commands=str(args['commands']))
 
         db_status = add_event_to_db(new_event)
         if not db_status:
@@ -220,6 +221,7 @@ class DBGetExecutionsLast(Resource):
             }
             output.append(query_serialised)
         return output, 200, {'Access-Control-Allow-Origin': '*'}
+
 
 # Routes for the Database API
 # Events

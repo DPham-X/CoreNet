@@ -6,6 +6,7 @@ from .conn_device import ConnDevice
 
 logger = logging.getLogger(__name__)
 
+
 class JunosTrigger(ConnDevice):
     def __init__(self, *args, **kwargs):
         """Junos Trigger which perform configuration changes
@@ -70,6 +71,7 @@ class JunosTrigger(ConnDevice):
             logger.error('Unsupported JunosTrigger command')
 
         return output
+
 
 if __name__ == '__main__':
     JunosTrigger()

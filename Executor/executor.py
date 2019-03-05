@@ -1,12 +1,9 @@
-import ast
-import json
 import logging
-import time
 import uuid
 from datetime import datetime
 
 import requests
-from flask import Flask, json, request
+from flask import Flask, json
 from flask_restful import Api, Resource, reqparse
 
 from lib.northstar_trigger import NorthstarTrigger
@@ -90,19 +87,15 @@ class ExecuteCommands(Resource):
                 if 'cli' == command['type']:
                     logger.info('Found CLI command')
                     output = jcli.execute(command)
-                    type = 'cli'
                 elif 'northstar' == command['type']:
                     logger.info('Found Northstar command')
                     output = ns.execute(command)
-                    type = 'northstar'
                 elif 'junos_backup' == command['type']:
                     logger.info('Found JunosBackup command')
                     output = bt.execute(command, new_uuid)
-                    type = 'junos_backup'
                 elif 'junos' == command['type']:
                     logger.info('Found JunosTrigger command')
                     output = jt.execute(command)
-                    type = 'junos'
                 else:
                     logger.error('Command type not supported: %s', command['type'])
                     status = 'Failed'
@@ -133,11 +126,13 @@ class ExecuteCommands(Resource):
             'commands': json.dumps(python_commands),
             'status': status
         }
-        r = requests.post('{}:{}/executions'.format(DATABASE_URL, DATA_PORT), json=body, headers=headers)
+        r = requests.post('{}:{}/executions'.format(DATABASE_URL, DATABASE_PORT), json=body, headers=headers)
         logger.info('Sent execution event %s', r.status_code)
+
 
 # Routes for Executor API
 api.add_resource(ExecuteCommands, '/exec_command')
+
 
 if __name__ == '__main__':
     app.run(host=HOST, debug=False, port=PORT, use_reloader=False)

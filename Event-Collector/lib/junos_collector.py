@@ -1,12 +1,10 @@
 import json
 import logging
 import logging.config
-import sys
 import time
 import uuid
 from copy import deepcopy
 from datetime import datetime
-from pprint import pprint
 
 import requests
 import yaml
@@ -334,22 +332,22 @@ class JunosCollector(object):
 
             if bgp_peer_count['down-peer-count'] == 0:
                 event = self._create_event(name='bgp.peers.up.{}'.format(device_name),
-                            type='cli',
-                            priority='information',
-                            body={device_name: {
-                                'up-peer-count': bgp_peer_count['peer-count'] - bgp_peer_count['down-peer-count'],
-                                'down-peer-count': bgp_peer_count['down-peer-count'],
-                            }})
+                                           type='cli',
+                                           priority='information',
+                                           body={device_name: {
+                                                'up-peer-count': bgp_peer_count['peer-count'] - bgp_peer_count['down-peer-count'],
+                                                'down-peer-count': bgp_peer_count['down-peer-count'],
+                                           }})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
             else:
                 event = self._create_event(name='bgp.peers.down.{}'.format(device_name),
-                            type='cli',
-                            priority='critical',
-                            body={device_name: {
-                                'up-peer-count': bgp_peer_count['peer-count'] - bgp_peer_count['down-peer-count'],
-                                'down-peer-count': bgp_peer_count['down-peer-count'],
-                            }})
+                                           type='cli',
+                                           priority='critical',
+                                           body={device_name: {
+                                                'up-peer-count': bgp_peer_count['peer-count'] - bgp_peer_count['down-peer-count'],
+                                                'down-peer-count': bgp_peer_count['down-peer-count'],
+                                           }})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
@@ -357,16 +355,16 @@ class JunosCollector(object):
         for device_name, ldp_neighbor in ldp_neighbors.items():
             if ldp_neighbor['ldp-session-state'] == 'Operational':
                 event = self._create_event(name='ldp.session.up.{}'.format(device_name),
-                            type='cli',
-                            priority='information',
-                            body={device_name: ldp_neighbor})
+                                           type='cli',
+                                           priority='information',
+                                           body={device_name: ldp_neighbor})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
             else:
                 event = self._create_event(name='ldp.session.down.{}'.format(device_name),
-                            type='cli',
-                            priority='critical',
-                            body={device_name: ldp_neighbor})
+                                           type='cli',
+                                           priority='critical',
+                                           body={device_name: ldp_neighbor})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
@@ -374,16 +372,16 @@ class JunosCollector(object):
         for device_name, ospf_neighbor in ospf_neighbors.items():
             if ospf_neighbor['ospf-neighbor-state'] == 'Full':
                 event = self._create_event(name='ospf.neighbors.up.{}'.format(device_name),
-                            type='cli',
-                            priority='information',
-                            body={device_name: ospf_neighbor})
+                                           type='cli',
+                                           priority='information',
+                                           body={device_name: ospf_neighbor})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
             else:
                 event = self._create_event(name='ospf.neighbors.down.{}'.format(device_name),
-                            type='cli',
-                            priority='critical',
-                            body={device_name: ospf_neighbor})
+                                           type='cli',
+                                           priority='critical',
+                                           body={device_name: ospf_neighbor})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
@@ -395,18 +393,18 @@ class JunosCollector(object):
                     status = False
                     break
 
-            if status == True:
+            if status is True:
                 event = self._create_event(name='pcep.status.up.{}'.format(device_name),
-                            type='cli',
-                            priority='information',
-                            body={device_name: pcep_status})
+                                           type='cli',
+                                           priority='information',
+                                           body={device_name: pcep_status})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
             else:
                 event = self._create_event(name='pcep.status.down.{}'.format(device_name),
-                            type='cli',
-                            priority='critical',
-                            body={device_name: pcep_status})
+                                           type='cli',
+                                           priority='critical',
+                                           body={device_name: pcep_status})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
@@ -418,20 +416,21 @@ class JunosCollector(object):
                     status = False
                     break
 
-            if status == True:
+            if status is True:
                 event = self._create_event(name='ospf.interfaces.up.{}'.format(device_name),
-                            type='cli',
-                            priority='information',
-                            body={device_name: ospf_interfaces})
+                                           type='cli',
+                                           priority='information',
+                                           body={device_name: ospf_interfaces})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
             else:
                 event = self._create_event(name='ospf.interfaces.down.{}'.format(device_name),
-                            type='cli',
-                            priority='critical',
-                            body={device_name: ospf_interfaces})
+                                           type='cli',
+                                           priority='critical',
+                                           body={device_name: ospf_interfaces})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
+
 
 if __name__ == '__main__':
     jc = JunosCollector(device_config='../config/devices.yaml')

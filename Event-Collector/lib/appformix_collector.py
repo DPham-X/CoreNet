@@ -10,6 +10,7 @@ DATABASE_PORT = 5000
 # Logging
 logger = logging.getLogger(__name__)
 
+
 class AppformixCollector(object):
     def __init__(self):
         """Collector module for dealing with AppFormix"""
@@ -34,7 +35,7 @@ class AppformixCollector(object):
             type = 'AppFormixUnknown'
 
         name = spec['name']
-        time = datetime.fromtimestamp(status['timestamp']/ 1e3).isoformat()
+        time = datetime.fromtimestamp(status['timestamp'] / 1e3).isoformat()
         priority = spec['severity']
         body = status
 
