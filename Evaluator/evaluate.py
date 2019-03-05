@@ -117,31 +117,40 @@ class Evaluator(object):
         # Starting execution delta of 0
         interval_s = datetime(1,1,1)
         interval_e = datetime(1,1,1)
+        evaluation_duration = interval_s - interval_e
 
         while True:
-            s = (datetime.now() - timedelta(seconds=EVALUATION_INTERVAL) - (interval_e - interval_s)).isoformat()
+            # StartTime = CurrentTime - TimeInThePast - TimeTakenToEvaluate
+            s = (datetime.now() - timedelta(seconds=EVALUATION_INTERVAL) - evaluation_duration).isoformat()
+            # EndTime = CurrentTime
             e = datetime.now().isoformat()
-            interval_s = datetime.now()
 
+            interval_s = datetime.now()
             self._get_events(s, e)
             self._evaluate_events()
-
             interval_e = datetime.now()
+
+            evaluation_duration = interval_s - interval_e
             time.sleep(60)
 
     def _import_config(self):
         """Imports the Evaluation configuration which contain all the predefined
         settings for determining what to do with each event
+
+        :raises FileNotFoundError: If config file is empty
         """
         config = None
         with open(EVALUATION_CONFIG_FILE, 'r') as conf:
             config = yaml.load(conf.read())
+            logging.info('Imported \'%s\'', EVALUATION_CONFIG_FILE)
         if not config:
             raise FileNotFoundError('Could not load config')
 
     def _import_links(self):
         """Imports the Link configuration settings to determine which pair of
         events are connected together
+
+        :raises FileNotFoundError: If link file is empty
         """
         e_links = None
         with open(EVALUATION_LINK_FILE, 'r') as f_links:
@@ -157,7 +166,7 @@ class Evaluator(object):
 
 
     def _get_events(self, start_time, end_time):
-        """REST call to the database to retrieve an list of events for a
+        """REST call to the database to retrieve a list of events for a
         specified interval
 
         :params start_time: Initial period for when to get the events
