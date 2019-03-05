@@ -1,8 +1,0 @@
-metrics:
-  - name: Interface Status
-    rpc: interface-information
-    xml: '//logical-interface/name'
-    devices:
-      - P1
-      - P2
-      - P3
