@@ -7,9 +7,9 @@ import requests
 import yaml
 
 # Constants
-DATABASE_HOST = 'http://10.49.227.135'
+DATABASE_URL = 'http://10.49.227.135'
 DATABASE_PORT = 5000
-EXECUTOR_HOST = 'http://10.49.227.135'
+EXECUTOR_URL = 'http://10.49.227.135'
 EXECUTOR_PORT = 5001
 EVALUATION_INTERVAL = 60  # Seconds
 EVALUATION_CONFIG_FILE = 'evaluation_config.yaml'
@@ -103,11 +103,11 @@ class Evaluator(object):
         """Constantly checks the database for events and will set up
         execution commands depending on the event
         """
-        self.configs = None
+        self.configs = []
         self.events = None
         self.links = {}
-        self.database_url = '{}:{}'.format(DATABASE_HOST, DATABASE_PORT)
-        self.execution_url = '{}:{}/exec_command'.format(EXECUTOR_HOST, EXECUTOR_PORT)
+        self.database_url = '{}:{}'.format(DATABASE_URL, DATABASE_PORT)
+        self.execution_url = '{}:{}/exec_command'.format(EXECUTOR_URL, EXECUTOR_PORT)
         self.get_events_interval_url = '{}/get_events_interval'.format(self.database_url)
 
         # Load up inital configurations
@@ -177,7 +177,7 @@ class Evaluator(object):
         self.events = []
         # Ensure start and end times are in iso8601 format
         query_url = '{}?start_time={}&end_time={}'.format(self.get_events_interval_url, start_time, end_time)
-        logger.info('Querying {}'.format(query_url))
+        logger.info('Querying %s', query_url)
         r = requests.get(query_url, timeout=10)
         if r.status_code != 200:
             logger.error('Query was unsuccessful')
@@ -194,13 +194,13 @@ class Evaluator(object):
             return
 
         unique_events = set(self.events)
-        logger.debug('Unique events: {}'.format(unique_events))
+        logger.debug('Unique events: %s', str(unique_events))
 
         for config in self.configs:
             if set(config['events']).issubset(unique_events):
                 logger.debug('Executing commands for %s', config['name'])
                 status = self._check_if_already_executed(name=config['name'])
-                if status == False:
+                if status is False:
                     logger.debug('Skipping')
                     continue
                 self._execute_commands(config)
@@ -238,8 +238,10 @@ class Evaluator(object):
             }
 
             # Sent Execution message to Executor
-            logger.info('Posting to {}, {}'.format(self.execution_url, body))
+            logger.info('Posting to %s, %s', self.execution_url, body)
             r = requests.post(self.execution_url, json=body, headers=headers)
+            if r.status_code != 201:
+                logger.error('Could not send executions to the Executor')
         except Exception as e:
             logger.error(e)
 

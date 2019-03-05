@@ -13,6 +13,11 @@ import yaml
 from jnpr.junos import Device
 from jnpr.junos.exception import ConnectError
 
+# Constants
+DATABASE_URL = 'http://10.49.227.135'
+DATABASE_PORT = 5000
+
+# Logging
 logger = logging.getLogger(__name__)
 
 
@@ -21,7 +26,7 @@ class JunosCollector(object):
         """ Junos RPC information collector """
         self.connected_devices = {}
         self.network_devices = {}
-        self.db_url = 'http://10.49.227.135:5000/create_event'
+        self.db_event_endpoint = '{}:{}/create_event'.format(DATABASE_URL, DATABASE_PORT)
         self._import_network_devices(device_config)
         self.start_monitoring()
 
@@ -55,7 +60,7 @@ class JunosCollector(object):
         headers = {
             'Content-Type': 'application/json',
         }
-        requests.post(self.db_url, json=event_msg, headers=headers)
+        requests.post(self.db_event_endpoint, json=event_msg, headers=headers)
 
     def _import_network_devices(self, network_device_file):
         logger.debug('Loading network devices into JunosCollector')
@@ -210,7 +215,6 @@ class JunosCollector(object):
             except Exception as e:
                 logger.error(e)
         return o_ospf_neighbors
-
 
     def get_ospf_interfaces(self):
         o_ospf_interfaces = {}

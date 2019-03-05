@@ -55,7 +55,6 @@ class Collector(object):
             logger.info('Starting Thread: %s', thread.name)
             thread.start()
 
-
         app.run(host=HOST, port=COLLECTOR_PORT, debug=False, use_reloader=False)
 
 class AppformixCollectorAPI(Resource):
@@ -68,9 +67,9 @@ class AppformixCollectorAPI(Resource):
         :param spec: AppFormix spec which has details on the specific rule which caused the notification
         :param kind: AppFormix kind which defines the type of notification (Event/Alarm)
         """
-        parser.add_argument('status', type=str, location= 'json')
-        parser.add_argument('spec', type=str, location= 'json')
-        parser.add_argument('kind', type=str, location= 'json')
+        parser.add_argument('status', type=str, location='json')
+        parser.add_argument('spec', type=str, location='json')
+        parser.add_argument('kind', type=str, location='json')
 
         args = parser.parse_args()
         status = ast.literal_eval(args.status)

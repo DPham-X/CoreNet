@@ -7,8 +7,12 @@ from time import sleep
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
+# Constants
+NORTHSTAR_AUTH = 'config/auth.yaml'
 
+# Logging
 logger = logging.getLogger(__name__)
+
 
 class NorthstarTrigger(object):
     access_token = None
@@ -19,11 +23,12 @@ class NorthstarTrigger(object):
 
     def __init__(self):
         """NorthStar REST API Translator"""
-        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
         self._import_variables()
+        logger.info('Started NorthStarTrigger')
 
     def _import_variables(self):
-        with open('config/auth.yaml') as file:
+        """Imports authentication credentials for NorthStar"""
+        with open(NORTHSTAR_AUTH) as file:
             imported_vars = yaml.load(file.read())
 
         self.base_url = 'https://{}:{}'.format(imported_vars['hostname'], imported_vars['port'])
@@ -34,11 +39,7 @@ class NorthstarTrigger(object):
     def _get_token(self):
         """Requests the Token needed for making NorthStar API calls
 
-        Raises
-        ------
-        ConnectionError:
-            When there is a problem in connecting to the Authentication API
-
+        :raises ConnectionError: When there is a problem in connecting to the Authentication API
         """
         payload = {'grant_type': 'password','username': self.username,'password': self.password}
         token_url = self.base_url + '/oauth2/token'
@@ -57,6 +58,15 @@ class NorthstarTrigger(object):
             raise ConnectionError('Could not authenticate to NorthStar REST API: {}'.format(e))
 
     def _node_id_from_name(self, name, nodes):
+        """Gets the node ID corresponding to the Router name
+
+        :param name: Router name
+        :type name: str
+        :param nodes: Northstar node list
+        :type nodes: list
+        :return: Node ID, [None] if router is not in the node
+        :rtype: int
+        """
         for node in nodes:
             if node['hostName'] == name:
                 return node['nodeIndex']
@@ -65,15 +75,9 @@ class NorthstarTrigger(object):
     def get_topology_elements(self):
         """Retrieves a list of network nodes from the NorthStar API
 
-        Raises
-        ------
-        ConnectionError:
-            When there is a problem in connecting to the NorthStar API
-
-        Returns
-        -------
-        : list
-            List of nodes for each network device
+        :raises ConnectionError: When there is a problem in connecting to the NorthStar API
+        :return: List of nodes for each network device
+        :rtype: list
         """
         self._get_token()
         topology_url = self.base_url + '/NorthStar/API/v2/tenant/1/topology/1/nodes'
@@ -100,15 +104,9 @@ class NorthstarTrigger(object):
     def get_links(self):
         """Retrieves the link information for every link in the network
 
-        Raises
-        ------
-        ConnectionError
-            When there is a problem in connecting to the NorthStar API
-
-        Returns
-        -------
-        : list
-            List of NorthStar Links
+        :raises ConnectionError: When there is a problem in connecting to the NorthStar API
+        :return: List of NorthStar Links
+        :rtype: list
         """
         self._get_token()
         links_url = self.base_url + '/NorthStar/API/v2/tenant/1/topology/1/links'
@@ -135,13 +133,10 @@ class NorthstarTrigger(object):
     def create_new_maintenance(self, event_name, index):
         """Sets a device into maintenance given their index in the topology list
 
-        Parameters
-        ----------
-        event_name : str
-            Name of the maintenance event
-        index : int
-            Index of the network device as found in the network node list
-
+        :param event_name: Name of the maintenance event
+        :type event_name: str
+        :param index: Index of the network device as found in the network node list
+        :type index: int
         """
         self._get_token()
         maintenance_url = self.base_url + '/NorthStar/API/v2/tenant/1/topology/1/maintenances'
@@ -174,6 +169,11 @@ class NorthstarTrigger(object):
         logger.info('Successfully created maintenance event, Name:{} Start:{} End:{}'.format(event_name, start_time, end_time))
 
     def get_maintenance_list(self):
+        """Retrieves all the maintenances from the NorthStar API
+
+        :return: List of maintenances on NorthStar
+        :rtype: list
+        """
         self._get_token()
         maintenance_url = self.base_url + '/NorthStar/API/v2/tenant/1/topology/1/maintenances'
         auth = '{} {}'.format(self.token_type, self.access_token)
@@ -191,6 +191,15 @@ class NorthstarTrigger(object):
         return maintenance_list
 
     def update_maintenance(self, status, index, info):
+        """Updates an existing maintenance with a new status
+
+        :param status: Status of the maintenance to be updated to
+        :type status: str
+        :param index: Node ID in the maintenance list
+        :type index: int
+        :param info: Existing maintenance object in json
+        :type info: str
+        """
         self._get_token()
         maintenance_url = self.base_url + '/NorthStar/API/v2/tenant/1/topology/1/maintenances/{}'.format(index)
         auth = '{} {}'.format(self.token_type, self.access_token)
@@ -211,6 +220,11 @@ class NorthstarTrigger(object):
         assert r.status_code == 200, r.status_code
 
     def trigger_path_optimisation(self):
+        """Forces NorthStar to recalculate optimal paths
+
+        :return: Output message if there is one or [False] if it failed
+        :rtype: str or bool
+        """
         self._get_token()
         path_optimisation_url = self.base_url + '/NorthStar/API/v2/tenant/1/topology/1/rpc/optimize'
 
@@ -231,6 +245,15 @@ class NorthstarTrigger(object):
         return response
 
     def put_device_in_maintenance(self, router_name, event_name):
+        """Puts a specific network device into maintenance mode
+
+        :param router_name: Name of the network device to put into maintenance
+        :type router_name: str
+        :param event_name: Name of the maintenace
+        :type event_name: str
+        :return: Message saying that the maintenance was created
+        :rtype: str
+        """
         topology_info = self.get_topology_elements()
         index = self._node_id_from_name(router_name, topology_info)
         logger.debug('Creating new maintenance for \'{}\''.format(router_name))
@@ -238,6 +261,14 @@ class NorthstarTrigger(object):
         return 'Creating new maintenance for \'{}\''.format(router_name)
 
     def delete_maintenance(self, event_name):
+        """Deletes a maintenance from NorthStar by setting it to 'cancelled' first
+        and then changing that status to 'deleted'
+
+        :param event_name: Nam eof the maintenance
+        :type event_name: str
+        :return: Message saying that the maintenance was deleted
+        :rtype: str
+        """
         maintenance_list = self.get_maintenance_list()
         maintenance_index = None
         maintenance_name = None
@@ -255,6 +286,8 @@ class NorthstarTrigger(object):
         return '{} has been deleted'.format(event_name)
 
     def delete_all_maintenances(self):
+        """Deletes all the maintenances on NorthStar by setting them all to 'cancelled'
+        and then to 'deleted'"""
         maintenance_list = self.get_maintenance_list()
 
         for maintenance in maintenance_list:
@@ -266,6 +299,20 @@ class NorthstarTrigger(object):
                 self.update_maintenance('deleted', maintenance_index, maintenance)
 
     def execute(self, vars):
+        """Executes NorthStarTrigger valid commands
+
+        Supported commands
+        ------------------
+        - trigger.optimisation
+        - create.device.maintenance
+        - delete.device.maintenance
+
+        :param vars: Has all information on the action to take including
+                     the command to be run and arguments associated with it
+        :type vars: dict
+        :return: Output of the command that was executed
+        :rtype: str
+        """
         command = vars['cmd']
         args = vars['args']
 
