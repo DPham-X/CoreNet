@@ -145,6 +145,7 @@ class Evaluator(object):
             logging.info('Imported \'%s\'', EVALUATION_CONFIG_FILE)
         if not config:
             raise FileNotFoundError('Could not load config')
+        self.configs = config
 
     def _import_links(self):
         """Imports the Link configuration settings to determine which pair of
@@ -192,7 +193,7 @@ class Evaluator(object):
             logger.error('Could not find any events')
             return
 
-        unique_events = set(self.events)
+        unique_events = set([event['name'] for event in self.events])
         logger.debug('Unique events: %s', str(unique_events))
 
         for config in self.configs:
@@ -200,7 +201,7 @@ class Evaluator(object):
                 logger.debug('Executing commands for %s', config['name'])
                 status = self._check_if_already_executed(name=config['name'])
                 if status is False:
-                    logger.debug('Skipping')
+                    logger.debug('%s already executed ... skipping', config['name'])
                     continue
                 self._execute_commands(config)
 
@@ -237,10 +238,10 @@ class Evaluator(object):
             }
 
             # Sent Execution message to Executor
-            logger.info('Posting to %s, %s', self.execution_url, body)
+            logger.info('Posting to %s', self.execution_url)
             r = requests.post(self.execution_url, json=body, headers=headers)
-            if r.status_code != 201:
-                logger.error('Could not send executions to the Executor')
+            if r.status_code != 200:
+                logger.error('Could not send executions to the Executor, %s', r.status_code)
         except Exception as e:
             logger.error(e)
 
