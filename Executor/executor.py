@@ -5,6 +5,7 @@ from datetime import datetime
 import requests
 from flask import Flask, json
 from flask_restful import Api, Resource, reqparse
+from gevent.pywsgi import WSGIServer
 
 from lib.northstar_trigger import NorthstarTrigger
 from lib.junos_cli_trigger import JunosCliTrigger
@@ -135,4 +136,6 @@ api.add_resource(ExecuteCommands, '/exec_command')
 
 
 if __name__ == '__main__':
-    app.run(host=HOST, debug=False, port=PORT, use_reloader=False)
+    logger.info('Starting WSGI Server %s:%s', HOST, PORT)
+    http_server = WSGIServer((HOST, PORT), app)
+    http_server.serve_forever()

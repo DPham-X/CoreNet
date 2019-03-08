@@ -232,6 +232,7 @@ api.add_resource(DBGetEventsInterval,    '/get_events_interval')
 api.add_resource(DBCreateExecution,      '/create_execution')
 api.add_resource(DBGetExecutionsLast,    '/get_executions_last')
 
+
 if __name__ == '__main__':
     initialise_db(DATABASE_NAME)
     logger.info('Starting WSGI Server %s:%s', HOST, DB_PORT)

@@ -1,6 +1,7 @@
 import json
 import logging
 import logging.config
+import threading
 import time
 import uuid
 from copy import deepcopy
@@ -37,29 +38,52 @@ class JunosCollector(object):
         for a specified interval
         """
         while True:
-            # # Interface Status
-            device_interface_statuses = self.get_interface_status()
-            self.monitor_oper_status(device_interface_statuses)
-            self.monitor_admin_status(device_interface_statuses)
+            threads = []
 
-            # BGP Peers
-            bgp_down_count = self.get_bgp_peers()
-            self.monitor_bgp_peers(bgp_down_count)
+            t = threading.Thread(target=self.t_interface_statuses)
+            threads.append(t)
+            t = threading.Thread(target=self.t_bgp_peers)
+            threads.append(t)
+            t = threading.Thread(target=self.t_ldp_sessions)
+            threads.append(t)
+            t = threading.Thread(target=self.t_ospf_neighbors)
+            threads.append(t)
+            t = threading.Thread(target=self.t_pcep_statuses)
+            threads.append(t)
 
-            # LDP Neighbors
-            ldp_neighbors = self.get_ldp_session()
-            self.monitor_ldp_session(ldp_neighbors)
+            for thread in threads:
+                thread.start()
 
-            # OSPF Neighbors
-            ospf_neighbors = self.get_ospf_neighbors()
-            self.monitor_ospf_neighbors(ospf_neighbors)
-            ospf_interfaces = self.get_ospf_interfaces()
-            self.monitor_ospf_interfaces(ospf_interfaces)
+            for thread in threads:
+                thread.join()
 
-            # PCEP Status
-            pcep_statuses = self.get_pcep_statuses()
-            self.monitor_pcep_statuses(pcep_statuses)
-            time.sleep(30)
+    def t_interface_statuses(self):
+        # Interface Status
+        device_interface_statuses = self.get_interface_status()
+        self.monitor_oper_status(device_interface_statuses)
+        self.monitor_admin_status(device_interface_statuses)
+
+    def t_bgp_peers(self):
+        # BGP Peers
+        bgp_down_count = self.get_bgp_peers()
+        self.monitor_bgp_peers(bgp_down_count)
+
+    def t_ldp_sessions(self):
+        # LDP Neighbors
+        ldp_neighbors = self.get_ldp_session()
+        self.monitor_ldp_session(ldp_neighbors)
+
+    def t_ospf_neighbors(self):
+        # OSPF Neighbors
+        ospf_neighbors = self.get_ospf_neighbors()
+        self.monitor_ospf_neighbors(ospf_neighbors)
+        ospf_interfaces = self.get_ospf_interfaces()
+        self.monitor_ospf_interfaces(ospf_interfaces)
+
+    def t_pcep_statuses(self):
+        # PCEP Status
+        pcep_statuses = self.get_pcep_statuses()
+        self.monitor_pcep_statuses(pcep_statuses)
 
     def add_event_to_db(self, event_msg):
         """Sends collected information as events to the Database endpoint
@@ -159,7 +183,6 @@ class JunosCollector(object):
                 }
             device_interface_statuses[dev_name] = interface_status
 
-        # self.interface_status = device_interface_statuses
         return device_interface_statuses
 
     def get_bgp_peers(self):
@@ -322,51 +345,52 @@ class JunosCollector(object):
 
     def monitor_oper_status(self, interface_status):
         for device_name, interfaces in interface_status.items():
-            oper_status = []
+            oper_status = True
             for interface_name, interface in interfaces.items():
                 if interface['oper-status'] == 'down':
-                    oper_status.append(interface_name)
+                    oper_status = False
+                    break
 
-            if oper_status:
+            if oper_status is False:
                 event = self._create_event(name='oper_status.interface.down.{}'.format(device_name),
                                            type='cli',
                                            priority='critical',
-                                           body={device_name: oper_status})
+                                           body={device_name: interfaces})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
             else:
                 event = self._create_event(name='oper_status.interface.up.{}'.format(device_name),
                                            type='cli',
                                            priority='information',
-                                           body={device_name: oper_status})
+                                           body={device_name: interfaces})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
     def monitor_admin_status(self, interface_status):
         for device_name, interfaces in interface_status.items():
-            admin_status = []
+            admin_status = True
             for interface_name, interface in interfaces.items():
                 if interface['admin-status'] == 'down':
-                    admin_status.append(interface_name)
+                    admin_status = False
+                    break
 
-            if admin_status:
+            if admin_status is False:
                 event = self._create_event(name='admin_status.interface.down.{}'.format(device_name),
                                            type='cli',
                                            priority='critical',
-                                           body={device_name: admin_status})
+                                           body={device_name: interfaces})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
             else:
                 event = self._create_event(name='admin_status.interface.up.{}'.format(device_name),
                                            type='cli',
                                            priority='information',
-                                           body={device_name: admin_status})
+                                           body={device_name: interfaces})
                 self.add_event_to_db(event)
                 logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
     def monitor_bgp_peers(self, bgp_peer_count):
         for device_name, bgp_peer_count in bgp_peer_count.items():
-
             if bgp_peer_count['down-peer-count'] == 0:
                 event = self._create_event(name='bgp.peers.up.{}'.format(device_name),
                                            type='cli',

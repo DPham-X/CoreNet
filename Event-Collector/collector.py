@@ -4,10 +4,10 @@ import threading
 
 from flask import Flask
 from flask_restful import Api, Resource, reqparse
+from gevent.pywsgi import WSGIServer
 
 from lib.appformix_collector import AppformixCollector
 from lib.junos_collector import JunosCollector
-
 
 # Constants
 HOST = '0.0.0.0'
@@ -55,8 +55,9 @@ class Collector(object):
             logger.info('Starting Thread: %s', thread.name)
             thread.start()
 
-        app.run(host=HOST, port=COLLECTOR_PORT, debug=False, use_reloader=False)
-
+        logger.info('Starting WSGI Server %s:%s', HOST, COLLECTOR_PORT)
+        http_server = WSGIServer((HOST, COLLECTOR_PORT), app)
+        http_server.serve_forever()
 
 class AppformixCollectorAPI(Resource):
     def post(self):
