@@ -11,7 +11,7 @@ DATABASE_URL = 'http://10.49.227.135'
 DATABASE_PORT = 5000
 EXECUTOR_URL = 'http://10.49.227.135'
 EXECUTOR_PORT = 5001
-EVALUATION_INTERVAL = 60  # Seconds
+EVALUATION_INTERVAL = 20  # Seconds
 EVALUATION_CONFIG_FILE = 'evaluation_config.yaml'
 EVALUATION_LINK_FILE = 'evaluation_link.yaml'
 
@@ -131,7 +131,7 @@ class Evaluator(object):
             interval_e = datetime.now()
 
             evaluation_duration = interval_s - interval_e
-            time.sleep(60)
+            time.sleep(EVALUATION_INTERVAL)
 
     def _import_config(self):
         """Imports the Evaluation configuration which contain all the predefined
