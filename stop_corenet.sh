@@ -1,8 +1,4 @@
-APT_ID=$(ps ax | grep -m1 "python db_core.py" | awk '{printf "%s",$1; }')
-kill $APT_ID
-APT_ID=$(ps ax | grep -m1 "python evaluate.py" | awk '{printf "%s",$1; }')
-kill $APT_ID
-APT_ID=$(ps ax | grep -m1 "python collector.py" | awk '{printf "%s",$1; }')
-kill $APT_ID
-APT_ID=$(ps ax | grep -m1 "python executor.py" | awk '{printf "%s",$1; }')
-kill $APT_ID
+kill $(ps aux | grep "[g]unicorn" | awk '{print $2}')
+kill $(ps aux | grep "[p]ython evaluate.py"   | awk '{print $2}')
+kill $(ps aux | grep "[p]ython collector.py"  | awk '{print $2}')
+kill $(ps aux | grep "[p]ython executor.py"   | awk '{print $2}')

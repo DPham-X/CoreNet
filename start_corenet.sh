@@ -10,10 +10,10 @@ NC='\033[0m'
 # ====================================================================
 
 echo "${GREEN}Sourcing virtual env ./venv/bin/activate${NC}"
-source venv/bin/activate
+. ./venv/bin/activate
 echo "${GREEN}Starting Database...${NC}"
 cd Database
-nohup python db_core.py &
+nohup gunicorn --workers=4 --bind 0.0.0.0:5000 db_core:app &
 cd ..
 echo "${YELLOW}Sleeping for 30 seconds ...${NC}"
 sleep 30s
@@ -33,3 +33,4 @@ echo "${GREEN}Starting Evaluator...${NC}"
 cd Evaluator
 nohup python evaluate.py &
 cd ..
+echo "~Finished starting corenet~"
