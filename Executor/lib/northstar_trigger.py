@@ -16,21 +16,21 @@ class NorthstarTrigger(object):
     base_url = None
     username = None
     password = None
+    verify = False
 
-    def __init__(self):
+    def __init__(self, config_file=NORTHSTAR_AUTH):
         """NorthStar REST API Translator"""
-        self._import_variables()
+        self._import_variables(config_file)
         logger.info('Started NorthStarTrigger')
 
-    def _import_variables(self):
+    def _import_variables(self, config_file):
         """Imports authentication credentials for NorthStar"""
-        with open(NORTHSTAR_AUTH) as file:
+        with open(config_file) as file:
             imported_vars = yaml.load(file.read())
 
         self.base_url = 'https://{}:{}'.format(imported_vars['hostname'], imported_vars['port'])
         self.username = imported_vars['username']
         self.password = imported_vars['password']
-        self.verify = False
 
     def _get_token(self):
         """Requests the Token needed for making NorthStar API calls
@@ -237,12 +237,14 @@ class NorthstarTrigger(object):
         logger.debug('Triggering path optimisation')
         try:
             r = requests.request('POST', path_optimisation_url, data='', headers=headers, verify=self.verify)
+            response = r.json()
             assert r.status_code == 200, r.status_code
         except AssertionError:
-            return False
-        response = r.json()
+            if response:
+                return response, False
+            return {'Error': 'Could not trigger path optimisation, {}'.format(r.status_code)}, False
         logger.info(response['result '])
-        return response
+        return response, True
 
     def put_device_in_maintenance(self, router_name, event_name):
         """Puts a specific network device into maintenance mode
@@ -258,7 +260,7 @@ class NorthstarTrigger(object):
         index = self._node_id_from_name(router_name, topology_info)
         logger.debug('Creating new maintenance for \'{}\''.format(router_name))
         self.create_new_maintenance(event_name, index)
-        return 'Creating new maintenance for \'{}\''.format(router_name)
+        return 'Creating new maintenance for \'{}\''.format(router_name), True
 
     def delete_maintenance(self, event_name):
         """Deletes a maintenance from NorthStar by setting it to 'cancelled' first
@@ -283,7 +285,7 @@ class NorthstarTrigger(object):
             self.update_maintenance('cancelled', maintenance_index, maintenance_info)
             self.update_maintenance('deleted', maintenance_index, maintenance_info)
 
-        return '{} has been deleted'.format(event_name)
+        return '{} has been deleted'.format(event_name), True
 
     def delete_all_maintenances(self):
         """Deletes all the maintenances on NorthStar by setting them all to 'cancelled'
@@ -317,11 +319,12 @@ class NorthstarTrigger(object):
         args = vars['args']
 
         if command == 'trigger.optimisation':
-            output = self.trigger_path_optimisation()
+            output, status = self.trigger_path_optimisation()
         elif command == 'create.device.maintenance':
-            output = self.put_device_in_maintenance(args, 'maintenance_{}'.format(args))
+            output, status = self.put_device_in_maintenance(args, 'maintenance_{}'.format(args))
         elif command == 'delete.device.maintenance':
-            output = self.delete_maintenance('maintenance_{}'.format(args))
+            output, status = self.delete_maintenance('maintenance_{}'.format(args))
         else:
             logger.error('Undefined northstar command ... skipping - %s', command)
-        return output
+            return '', False
+        return output, status

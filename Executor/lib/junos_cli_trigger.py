@@ -46,9 +46,8 @@ class JunosCliTrigger(ConnDevice):
             _, output = ss.run(r'cli -c "{} | no-more"'.format(command), timeout=30)
 
         if output:
-            output = re.sub('\\r\\n---\(more\s\d+%\)---\\r\s+\r', '\n', output)
+            output = re.sub(r'\r\n---\(more\s\d+%\)---\r\s+', '\n', output)
             output = output.replace('\r', '')
-
         return output
 
     def execute(self, vars):
@@ -64,8 +63,9 @@ class JunosCliTrigger(ConnDevice):
         args = vars['args']
 
         output = self.run_junos_cli_cmd(command, args)
-
-        return output
+        if not output:
+            return '', False
+        return output, True
 
 
 if __name__ == '__main__':

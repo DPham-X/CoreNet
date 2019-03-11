@@ -17,7 +17,6 @@ HOST = '0.0.0.0'
 PORT = 5001
 DATABASE_URL = 'http://10.49.227.135'
 DATABASE_PORT = 5000
-
 # Logging
 handler = logging.StreamHandler()
 handler.setLevel(logging.INFO)
@@ -75,46 +74,45 @@ class ExecuteCommands(Resource):
 
         args = parser.parse_args()
 
-        name = args.evaluation_name
-        binded_events = args.binded_events
-        time = datetime.now().isoformat()
-        status = 'Completed'
-        new_uuid = str(uuid.uuid4())
+        status_message = 'Completed'
+        status = True
         python_commands = json.loads(args.commands)
 
         for i, command in enumerate(python_commands):
             try:
-                output = ''
                 if 'cli' == command['type']:
                     logger.info('Found CLI command')
-                    output = jcli.execute(command)
+                    output, status = jcli.execute(command)
                 elif 'northstar' == command['type']:
                     logger.info('Found Northstar command')
-                    output = ns.execute(command)
+                    output, status = ns.execute(command)
                 elif 'junos_backup' == command['type']:
                     logger.info('Found JunosBackup command')
-                    output = bt.execute(command, new_uuid)
+                    output, status = bt.execute(command, new_uuid)
                 elif 'junos' == command['type']:
                     logger.info('Found JunosTrigger command')
-                    output = jt.execute(command)
+                    output, status = jt.execute(command)
                 else:
                     logger.error('Command type not supported: %s', command['type'])
-                    status = 'Failed'
-                    raise KeyError
+                    status_message = 'Failed'
+                    status = False
             except KeyError as e:
                 logger.error('An error occurred %s', e)
-                status = 'Failed'
+                status_message = 'Failed'
                 python_commands[i]['output'] = 'An error occured'
                 break
             else:
                 python_commands[i]['output'] = str(output)
+                if not output or status is False :
+                    status_message = 'Failed'
 
-                if not output:
-                    status = 'Failed'
-                    python_commands[i]['output'] = 'An error occured'
+        self.send_execution(args, python_commands, status_message)
 
-                if status == 'Failed':
-                    break
+    def send_execution(self, args, python_commands, status_message):
+        new_uuid = str(uuid.uuid4())
+        name = args.evaluation_name
+        binded_events = args.binded_events
+        time = datetime.now().isoformat()
 
         headers = {
             'Content-Type': 'application/json'
@@ -125,9 +123,9 @@ class ExecuteCommands(Resource):
             'binded_events': binded_events,
             'time': str(time),
             'commands': json.dumps(python_commands),
-            'status': status
+            'status': status_message
         }
-        r = requests.post('{}:{}/executions'.format(DATABASE_URL, DATABASE_PORT), json=body, headers=headers)
+        r = requests.post('{}:{}/create_execution'.format(DATABASE_URL, DATABASE_PORT), json=body, headers=headers)
         logger.info('Sent execution event %s', r.status_code)
 
 

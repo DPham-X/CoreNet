@@ -68,5 +68,5 @@ class BackupTrigger(ConnDevice):
             output = self.backup_config(args, uuid)
         else:
             logger.error('Undefined BackupTrigger command ... skipping - %s', command)
-            return False
-        return output
+            return '', False
+        return output, True

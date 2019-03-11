@@ -40,7 +40,7 @@ class JunosTrigger(ConnDevice):
                 output = 'No difference between old and new config'
         except Exception as e:
             logger.error(e)
-            output = e
+            return str(e), False
         return output
 
     def execute(self, vars):
@@ -66,11 +66,11 @@ class JunosTrigger(ConnDevice):
             logger.error('Unable to unpack evaluation variables: %', e)
 
         if cmd == 'load.config':
-            output = self._load_config(device_name, config_name)
+            output, status = self._load_config(device_name, config_name)
         else:
             logger.error('Unsupported JunosTrigger command')
-
-        return output
+            return '', False
+        return output, status
 
 
 if __name__ == '__main__':
