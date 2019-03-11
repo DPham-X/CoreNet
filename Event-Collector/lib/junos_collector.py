@@ -37,9 +37,10 @@ class JunosCollector(object):
         """Monitoring loop which collects information from each device
         for a specified interval
         """
+        interval = 10  # seconds
         while True:
             threads = []
-
+            start_time = time.time()
             t = threading.Thread(target=self.t_interface_statuses)
             threads.append(t)
             t = threading.Thread(target=self.t_bgp_peers)
@@ -56,7 +57,13 @@ class JunosCollector(object):
 
             for thread in threads:
                 thread.join()
+            end_time = time.time()
+            duration = end_time - start_time
 
+            sleep_duration = interval - int(duration)
+            if sleep_duration < 0:
+                sleep_duration = 0
+            time.sleep(sleep_duration)
     def t_interface_statuses(self):
         # Interface Status
         device_interface_statuses = self.get_interface_status()
