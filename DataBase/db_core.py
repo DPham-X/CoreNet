@@ -7,8 +7,11 @@ from flask_restful import Api, Resource, reqparse
 from flask_sqlalchemy import SQLAlchemy
 from gevent.pywsgi import WSGIServer
 from sqlalchemy.exc import IntegrityError, OperationalError
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
 
-from db_models import Event, Execution
+from db_models import Event, Execution, db
 
 # Constants
 DATABASE_NAME = 'core.db'
@@ -19,7 +22,12 @@ DB_PORT = 5000
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{}'.format(DATABASE_NAME)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+engine = create_engine('sqlite:///{}'.format(DATABASE_NAME), convert_unicode=True)
+db.session = scoped_session(sessionmaker(autocommit=False,
+                                         autoflush=False,
+                                         bind=engine,
+                                         expire_on_commit=False))
+
 api = Api(app)
 CORS(app)
 
@@ -56,16 +64,42 @@ def add_event_to_db(event):
     :type event: db.model object
     """
     try:
-        db.session.add(event)
-        db.session.commit()
+        engine.execute(Event.__table__.insert(),[{
+            'uuid': event.uuid,
+            'time': event.time,
+            'name': event.name,
+            'type': event.type,
+            'priority': event.priority,
+            'body': event.body,
+        }])
     except IntegrityError as e:
         logger.error('UUID might already be in the database (ignoring)\n %s', e)
-        db.session.rollback()
         return False
     else:
-        logging.info('Sucessfully added {}'.format(event.uuid))
+        logging.info('Sucessfully added Event: {}'.format(event.uuid))
     return True
 
+def add_execution_to_db(execution):
+    """Adds and commits new entries into the core databse
+
+    :param execution: Database model that has been filled out
+    :type execution: db.model object
+    """
+    try:
+        engine.execute(Execution.__table__.insert(),[{
+            'uuid': execution.uuid,
+            'name': execution.name,
+            'binded_events': execution.binded_events,
+            'time': execution.time,
+            'commands': execution.commands,
+            'status': execution.status,
+        }])
+    except IntegrityError as e:
+        logger.error('UUID might already be in the database (ignoring)\n %s', e)
+        return False
+    else:
+        logging.info('Sucessfully added Execution: {}'.format(execution.uuid))
+    return True
 
 class DBCreateEvent(Resource):
     def post(self):
@@ -193,7 +227,7 @@ class DBCreateExecution(Resource):
                               status=str(args['status']),
                               commands=str(args['commands']))
 
-        db_status = add_event_to_db(new_event)
+        db_status = add_execution_to_db(new_event)
         if not db_status:
             return {'Error': 'Could not add execution to database'}, 400
         return {'Success': 'New execution added with id {}'.format(args['uuid'])}, 201
