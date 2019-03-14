@@ -1,0 +1,183 @@
+---
+- name: P1 Interface Down
+  events:
+    - oper_status.interface.down.P1
+    - admin_status.interface.down.P1
+  commands:
+    - type: cli
+      cmd: show interfaces terse
+      args: P1
+    - type: cli
+      cmd: show log messages | match interface | last 100
+      args: P1
+    - type: junos_backup
+      cmd: backup.config
+      args: P1
+    - type: junos
+      cmd: load.config
+      args:
+        device: P1
+        config_name: hostname.down.conf
+    - type: northstar
+      cmd: create.device.maintenance
+      args: P1
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+- name: P1 Interface Up
+  events:
+    - oper_status.interface.up.P1
+    - admin_status.interface.up.P1
+  commands:
+    - type: cli
+      cmd: show interfaces terse
+      args: P1
+    - type: junos
+      cmd: load.config
+      args:
+        device: P1
+        config_name: hostname.up.conf
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: P1
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+- name: P2 Interface Down
+  events:
+    - oper_status.interface.down.P2
+    - admin_status.interface.down.P2
+  commands:
+    - type: cli
+      cmd: show interfaces terse
+      args: P2
+    - type: cli
+      cmd: show log messages | match interface | last 100
+      args: P1
+    - type: junos_backup
+      cmd: backup.config
+      args: P2
+    - type: northstar
+      cmd: create.device.maintenance
+      args: P2
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+- name: P2 Interface Up
+  events:
+    - oper_status.interface.up.P2
+    - admin_status.interface.up.P2
+  commands:
+    - type: cli
+      cmd: show interfaces terse
+      args: P2
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: P2
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+- name: P3 Interface Down
+  events:
+    - oper_status.interface.down.P3
+    - admin_status.interface.down.P3
+  commands:
+    - type: cli
+      cmd: show interfaces terse
+      args: P3
+    - type: cli
+      cmd: show log messages | match interface | last 100
+      args: P3
+    - type: junos_backup
+      cmd: backup.config
+      args: P3
+    - type: northstar
+      cmd: create.device.maintenance
+      args: P3
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+- name: P3 Interface Up
+  events:
+    - oper_status.interface.up.P3
+    - admin_status.interface.up.P3
+  commands:
+    - type: cli
+      cmd: show interfaces terse
+      args: P3
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: P3
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: P1 BGP Peers Down
+  events:
+    - bgp.peers.down.P1
+  commands:
+    - type: cli
+      cmd: show bgp summary
+      args: P1
+    - type: cli
+      cmd: show configuration protocols bgp
+      args: P1
+    - type: cli
+      cmd: show bgp neighbor
+      args: P1
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+- name: P1 BGP Peers Up
+  events:
+    - bgp.peers.up.P1
+  commands:
+    - type: cli
+      cmd: show bgp summary
+      args: P1
+    - type: cli
+      cmd: show bgp neighbor
+      args: P1
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: P1 OSPF Interfaces Down
+  events:
+    - ospf.interfaces.down.P1
+  commands:
+    - type: cli
+      cmd: show ospf interface brief
+      args: P1
+    - type: cli
+      cmd: show ospf neighbor
+      args: P1
+    - type: cli
+      cmd: show ospf route
+      args: P1
+    - type: cli
+      cmd: show ospf statistics
+      args: P1
+    - type: northstar
+      cmd: create.device.maintenance
+      args: P1
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: P1 OSPF Interfaces Up
+  events:
+    - ospf.interfaces.up.P1
+  commands:
+    - type: cli
+      cmd: show ospf interface brief
+      args: P1
+    - type: cli
+      cmd: show ospf neighbor
+      args: P1
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: P1
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
