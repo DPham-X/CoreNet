@@ -15,7 +15,7 @@ from lib.junos_trigger import JunosTrigger
 # Constants
 HOST = '0.0.0.0'
 PORT = 5001
-DATABASE_URL = 'http://10.49.227.135'
+DATABASE_URL = 'http://0.0.0.0'
 DATABASE_PORT = 5000
 # Logging
 handler = logging.StreamHandler()

@@ -7,9 +7,9 @@ import requests
 import yaml
 
 # Constants
-DATABASE_URL = 'http://10.49.227.135'
+DATABASE_URL = 'http://0.0.0.0'
 DATABASE_PORT = 5000
-EXECUTOR_URL = 'http://10.49.227.135'
+EXECUTOR_URL = 'http://0.0.0.0'
 EXECUTOR_PORT = 5001
 EVALUATION_INTERVAL = 20  # Seconds
 EVALUATION_CONFIG_FILE = 'evaluation_config.yaml'
