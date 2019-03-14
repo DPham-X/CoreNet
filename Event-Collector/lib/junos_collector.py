@@ -13,7 +13,7 @@ from jnpr.junos import Device
 from jnpr.junos.exception import ConnectError
 
 # Constants
-DATABASE_URL = 'http://10.49.227.135'
+DATABASE_URL = 'http://0.0.0.0'
 DATABASE_PORT = 5000
 
 # Logging
