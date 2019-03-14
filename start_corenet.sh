@@ -9,11 +9,11 @@ NC='\033[0m'
 
 # ====================================================================
 
-echo "${GREEN}Sourcing virtual env ./venv/bin/activate${NC}"
-. ./venv/bin/activate
+# echo "${GREEN}Sourcing virtual env ./venv/bin/activate${NC}"
+# . ./venv/bin/activate
 echo "${GREEN}Starting Database...${NC}"
 cd Database
-nohup gunicorn --workers=4 --bind 0.0.0.0:5000 db_core:app &
+nohup gunicorn --workers=12 --bind 0.0.0.0:5000 db_core:app &
 cd ..
 echo "${YELLOW}Sleeping for 30 seconds ...${NC}"
 sleep 30s
