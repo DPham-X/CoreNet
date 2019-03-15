@@ -3,15 +3,78 @@
 - 1: P1 Interface Up
   2: P1 Interface Down
   default: 1
-- 1: P2 Interface Up
-  2: P2 Interface Down
-  default: 1
-- 1: P3 Interface Up
-  2: P3 Interface Down
-  default: 1
 - 1: P1 BGP Peers Up
   2: P1 BGP Peers Down
   default: 1
 - 1: P1 OSPF Interfaces Up
   2: P1 OSPF Interfaces Down
+  default: 1
+- 1: P1 PCEP Status Up
+  2: P1 PCEP Status Down
+  default: 1
+
+- 1: P2 Interface Up
+  2: P2 Interface Down
+  default: 1
+- 1: P2 BGP Peers Up
+  2: P2 BGP Peers Down
+  default: 1
+- 1: P2 OSPF Interfaces Up
+  2: P2 OSPF Interfaces Down
+  default: 1
+- 1: P2 PCEP Status Up
+  2: P2 PCEP Status Down
+  default: 1
+
+- 1: P3 Interface Up
+  2: P3 Interface Down
+  default: 1
+- 1: P3 BGP Peers Up
+  2: P3 BGP Peers Down
+  default: 1
+- 1: P3 OSPF Interfaces Up
+  2: P3 OSPF Interfaces Down
+  default: 1
+- 1: P3 PCEP Status Up
+  2: P3 PCEP Status Down
+  default: 1
+
+- 1: PE1 Interface Up
+  2: PE1 Interface Down
+  default: 1
+- 1: PE1 OSPF Interfaces Up
+  2: PE1 OSPF Interfaces Down
+  default: 1
+- 1: PE1 PCEP Status Up
+  2: PE1 PCEP Status Down
+  default: 1
+
+- 1: PE2 Interface Up
+  2: PE2 Interface Down
+  default: 1
+- 1: PE2 OSPF Interfaces Up
+  2: PE2 OSPF Interfaces Down
+  default: 1
+- 1: PE2 PCEP Status Up
+  2: PE2 PCEP Status Down
+  default: 1
+
+- 1: PE3 Interface Up
+  2: PE3 Interface Down
+  default: 1
+- 1: PE3 OSPF Interfaces Up
+  2: PE3 OSPF Interfaces Down
+  default: 1
+- 1: PE3 PCEP Status Up
+  2: PE3 PCEP Status Down
+  default: 1
+
+- 1: PE4 Interface Up
+  2: PE4 Interface Down
+  default: 1
+- 1: PE4 OSPF Interfaces Up
+  2: PE4 OSPF Interfaces Down
+  default: 1
+- 1: PE4 PCEP Status Up
+  2: PE4 PCEP Status Down
   default: 1
