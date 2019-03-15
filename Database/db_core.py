@@ -64,8 +64,6 @@ def add_event_to_db(event):
     :param event: Database model that has been filled out
     :type event: db.model object
     """
-    # Ensure DB has been init
-    initialise_db(DATABASE_NAME)
     try:
         engine.execute(Event.__table__.insert(),[{
             'uuid': event.uuid,
@@ -88,8 +86,6 @@ def add_execution_to_db(execution):
     :param execution: Database model that has been filled out
     :type execution: db.model object
     """
-    # Ensure DB has been init
-    initialise_db(DATABASE_NAME)
     try:
         engine.execute(Execution.__table__.insert(),[{
             'uuid': execution.uuid,
@@ -261,6 +257,7 @@ class DBGetExecutionsLast(Resource):
             output.append(query_serialised)
         return output, 200, {'Access-Control-Allow-Origin': '*'}
 
+initialise_db(DATABASE_NAME)
 
 # Routes for the Database API
 # Events
