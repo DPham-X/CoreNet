@@ -130,7 +130,7 @@ export default {
       if (this.status === false) {
         return
       }
-      const link = 'http://10.49.227.135:5000/'
+      const link = 'http://0.0.0.0:5000/'
       const apiLink = link + 'get_executions_last'
 
       axios
