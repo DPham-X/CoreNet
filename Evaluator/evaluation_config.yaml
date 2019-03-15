@@ -117,6 +117,42 @@
       cmd: trigger.optimisation
       args: None
 
+- name: P1 PCEP Status Down
+  events:
+    - pcep.status.down.P1
+  commands:
+    - type: cli
+      cmd: show path-computation-client status
+      args: P1
+    - type: cli
+      cmd: show path-computation-client statistics
+      args: P1
+    - type: cli
+      cmd: show configuration protocols pcep
+      args: P1
+    - type: junos_backup
+      cmd: backup.config
+      args: P1
+    - type: junos
+      cmd: load.config
+      args:
+        device: P1
+        config_name: protocols.pcep.P1.conf
+
+- name: P1 PCEP Status Up
+  events:
+    - pcep.status.up.P1
+  commands:
+    - type: cli
+      cmd: show path-computation-client status
+      args: P1
+    - type: cli
+      cmd: show path-computation-client statistics
+      args: P1
+    - type: cli
+      cmd: show configuration protocols pcep
+      args: P1
+
 # P2
 - name: P2 Interface Down
   events:
@@ -235,6 +271,41 @@
       cmd: trigger.optimisation
       args: None
 
+- name: P2 PCEP Status Down
+  events:
+    - pcep.status.down.P2
+  commands:
+    - type: cli
+      cmd: show path-computation-client status
+      args: P2
+    - type: cli
+      cmd: show path-computation-client statistics
+      args: P2
+    - type: cli
+      cmd: show configuration protocols pcep
+      args: P2
+    - type: junos_backup
+      cmd: backup.config
+      args: P2
+    - type: junos
+      cmd: load.config
+      args:
+        device: P2
+        config_name: protocols.pcep.P2.conf
+
+- name: P2 PCEP Status Up
+  events:
+    - pcep.status.up.P2
+  commands:
+    - type: cli
+      cmd: show path-computation-client status
+      args: P2
+    - type: cli
+      cmd: show path-computation-client statistics
+      args: P2
+    - type: cli
+      cmd: show configuration protocols pcep
+      args: P2
 
 # P3
 - name: P3 Interface Down
@@ -353,3 +424,531 @@
     - type: northstar
       cmd: trigger.optimisation
       args: None
+
+- name: P3 PCEP Status Down
+  events:
+    - pcep.status.down.P3
+  commands:
+    - type: cli
+      cmd: show path-computation-client status
+      args: P3
+    - type: cli
+      cmd: show path-computation-client statistics
+      args: P3
+    - type: cli
+      cmd: show configuration protocols pcep
+      args: P3
+    - type: junos_backup
+      cmd: backup.config
+      args: P3
+    - type: junos
+      cmd: load.config
+      args:
+        device: P3
+        config_name: protocols.pcep.P3.conf
+
+- name: P3 PCEP Status Up
+  events:
+    - pcep.status.up.P3
+  commands:
+    - type: cli
+      cmd: show path-computation-client status
+      args: P3
+    - type: cli
+      cmd: show path-computation-client statistics
+      args: P3
+    - type: cli
+      cmd: show configuration protocols pcep
+      args: P3
+
+# PE1
+- name: PE1 Interface Down
+  events:
+    - oper_status.interface.down.PE1
+    - admin_status.interface.down.PE1
+  commands:
+    - type: cli
+      cmd: show interfaces terse
+      args: PE1
+    - type: cli
+      cmd: show log messages | match interface | last 100
+      args: PE1
+    - type: junos_backup
+      cmd: backup.config
+      args: PE1
+    - type: junos
+      cmd: load.config
+      args:
+        device: PE1
+        config_name: hostname.down.conf
+    - type: northstar
+      cmd: create.device.maintenance
+      args: PE1
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: PE1 Interface Up
+  events:
+    - oper_status.interface.up.PE1
+    - admin_status.interface.up.PE1
+  commands:
+    - type: cli
+      cmd: show interfaces terse
+      args: PE1
+    - type: junos
+      cmd: load.config
+      args:
+        device: PE1
+        config_name: hostname.up.conf
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: PE1
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: PE1 OSPF Interfaces Down
+  events:
+    - ospf.interfaces.down.PE1
+  commands:
+    - type: cli
+      cmd: show ospf interface brief
+      args: PE1
+    - type: cli
+      cmd: show ospf neighbor
+      args: PE1
+    - type: cli
+      cmd: show ospf route
+      args: PE1
+    - type: cli
+      cmd: show ospf statistics
+      args: PE1
+    - type: northstar
+      cmd: create.device.maintenance
+      args: PE1
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: PE1 OSPF Interfaces Up
+  events:
+    - ospf.interfaces.up.PE1
+  commands:
+    - type: cli
+      cmd: show ospf interface brief
+      args: PE1
+    - type: cli
+      cmd: show ospf neighbor
+      args: PE1
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: PE1
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: PE1 PCEP Status Down
+  events:
+    - pcep.status.down.PE1
+  commands:
+    - type: cli
+      cmd: show path-computation-client status
+      args: PE1
+    - type: cli
+      cmd: show path-computation-client statistics
+      args: PE1
+    - type: cli
+      cmd: show configuration protocols pcep
+      args: PE1
+    - type: junos_backup
+      cmd: backup.config
+      args: PE1
+    - type: junos
+      cmd: load.config
+      args:
+        device: PE1
+        config_name: protocols.pcep.PE1.conf
+
+- name: PE1 PCEP Status Up
+  events:
+    - pcep.status.up.PE1
+  commands:
+    - type: cli
+      cmd: show path-computation-client status
+      args: PE1
+    - type: cli
+      cmd: show path-computation-client statistics
+      args: PE1
+    - type: cli
+      cmd: show configuration protocols pcep
+      args: PE1
+
+# PE2
+- name: PE2 Interface Down
+  events:
+    - oper_status.interface.down.PE2
+    - admin_status.interface.down.PE2
+  commands:
+    - type: cli
+      cmd: show interfaces terse
+      args: PE2
+    - type: cli
+      cmd: show log messages | match interface | last 100
+      args: PE2
+    - type: junos_backup
+      cmd: backup.config
+      args: PE2
+    - type: junos
+      cmd: load.config
+      args:
+        device: PE2
+        config_name: hostname.down.conf
+    - type: northstar
+      cmd: create.device.maintenance
+      args: PE2
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: PE2 Interface Up
+  events:
+    - oper_status.interface.up.PE2
+    - admin_status.interface.up.PE2
+  commands:
+    - type: cli
+      cmd: show interfaces terse
+      args: PE2
+    - type: junos
+      cmd: load.config
+      args:
+        device: PE2
+        config_name: hostname.up.conf
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: PE2
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: PE2 OSPF Interfaces Down
+  events:
+    - ospf.interfaces.down.PE2
+  commands:
+    - type: cli
+      cmd: show ospf interface brief
+      args: PE2
+    - type: cli
+      cmd: show ospf neighbor
+      args: PE2
+    - type: cli
+      cmd: show ospf route
+      args: PE2
+    - type: cli
+      cmd: show ospf statistics
+      args: PE2
+    - type: northstar
+      cmd: create.device.maintenance
+      args: PE2
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: PE2 OSPF Interfaces Up
+  events:
+    - ospf.interfaces.up.PE2
+  commands:
+    - type: cli
+      cmd: show ospf interface brief
+      args: PE2
+    - type: cli
+      cmd: show ospf neighbor
+      args: PE2
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: PE2
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: PE2 PCEP Status Down
+  events:
+    - pcep.status.down.PE2
+  commands:
+    - type: cli
+      cmd: show path-computation-client status
+      args: PE2
+    - type: cli
+      cmd: show path-computation-client statistics
+      args: PE2
+    - type: cli
+      cmd: show configuration protocols pcep
+      args: PE2
+    - type: junos_backup
+      cmd: backup.config
+      args: PE2
+    - type: junos
+      cmd: load.config
+      args:
+        device: PE2
+        config_name: protocols.pcep.PE2.conf
+
+- name: PE2 PCEP Status Up
+  events:
+    - pcep.status.up.PE2
+  commands:
+    - type: cli
+      cmd: show path-computation-client status
+      args: PE2
+    - type: cli
+      cmd: show path-computation-client statistics
+      args: PE2
+    - type: cli
+      cmd: show configuration protocols pcep
+      args: PE2
+
+# PE3
+- name: PE3 Interface Down
+  events:
+    - oper_status.interface.down.PE3
+    - admin_status.interface.down.PE3
+  commands:
+    - type: cli
+      cmd: show interfaces terse
+      args: PE3
+    - type: cli
+      cmd: show log messages | match interface | last 100
+      args: PE3
+    - type: junos_backup
+      cmd: backup.config
+      args: PE3
+    - type: junos
+      cmd: load.config
+      args:
+        device: PE3
+        config_name: hostname.down.conf
+    - type: northstar
+      cmd: create.device.maintenance
+      args: PE3
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: PE3 Interface Up
+  events:
+    - oper_status.interface.up.PE3
+    - admin_status.interface.up.PE3
+  commands:
+    - type: cli
+      cmd: show interfaces terse
+      args: PE3
+    - type: junos
+      cmd: load.config
+      args:
+        device: PE3
+        config_name: hostname.up.conf
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: PE3
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: PE3 OSPF Interfaces Down
+  events:
+    - ospf.interfaces.down.PE3
+  commands:
+    - type: cli
+      cmd: show ospf interface brief
+      args: PE3
+    - type: cli
+      cmd: show ospf neighbor
+      args: PE3
+    - type: cli
+      cmd: show ospf route
+      args: PE3
+    - type: cli
+      cmd: show ospf statistics
+      args: PE3
+    - type: northstar
+      cmd: create.device.maintenance
+      args: PE3
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: PE3 OSPF Interfaces Up
+  events:
+    - ospf.interfaces.up.PE3
+  commands:
+    - type: cli
+      cmd: show ospf interface brief
+      args: PE3
+    - type: cli
+      cmd: show ospf neighbor
+      args: PE3
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: PE3
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: PE3 PCEP Status Down
+  events:
+    - pcep.status.down.PE3
+  commands:
+    - type: cli
+      cmd: show path-computation-client status
+      args: PE3
+    - type: cli
+      cmd: show path-computation-client statistics
+      args: PE3
+    - type: cli
+      cmd: show configuration protocols pcep
+      args: PE3
+    - type: junos_backup
+      cmd: backup.config
+      args: PE3
+    - type: junos
+      cmd: load.config
+      args:
+        device: PE3
+        config_name: protocols.pcep.PE3.conf
+
+- name: PE3 PCEP Status Up
+  events:
+    - pcep.status.up.PE3
+  commands:
+    - type: cli
+      cmd: show path-computation-client status
+      args: PE3
+    - type: cli
+      cmd: show path-computation-client statistics
+      args: PE3
+    - type: cli
+      cmd: show configuration protocols pcep
+      args: PE3
+
+# PE4
+- name: PE4 Interface Down
+  events:
+    - oper_status.interface.down.PE4
+    - admin_status.interface.down.PE4
+  commands:
+    - type: cli
+      cmd: show interfaces terse
+      args: PE4
+    - type: cli
+      cmd: show log messages | match interface | last 100
+      args: PE4
+    - type: junos_backup
+      cmd: backup.config
+      args: PE4
+    - type: junos
+      cmd: load.config
+      args:
+        device: PE4
+        config_name: hostname.down.conf
+    - type: northstar
+      cmd: create.device.maintenance
+      args: PE4
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: PE4 Interface Up
+  events:
+    - oper_status.interface.up.PE4
+    - admin_status.interface.up.PE4
+  commands:
+    - type: cli
+      cmd: show interfaces terse
+      args: PE4
+    - type: junos
+      cmd: load.config
+      args:
+        device: PE4
+        config_name: hostname.up.conf
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: PE4
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: PE4 OSPF Interfaces Down
+  events:
+    - ospf.interfaces.down.PE4
+  commands:
+    - type: cli
+      cmd: show ospf interface brief
+      args: PE4
+    - type: cli
+      cmd: show ospf neighbor
+      args: PE4
+    - type: cli
+      cmd: show ospf route
+      args: PE4
+    - type: cli
+      cmd: show ospf statistics
+      args: PE4
+    - type: northstar
+      cmd: create.device.maintenance
+      args: PE4
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: PE4 OSPF Interfaces Up
+  events:
+    - ospf.interfaces.up.PE4
+  commands:
+    - type: cli
+      cmd: show ospf interface brief
+      args: PE4
+    - type: cli
+      cmd: show ospf neighbor
+      args: PE4
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: PE4
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: PE4 PCEP Status Down
+  events:
+    - pcep.status.down.PE4
+  commands:
+    - type: cli
+      cmd: show path-computation-client status
+      args: PE4
+    - type: cli
+      cmd: show path-computation-client statistics
+      args: PE4
+    - type: cli
+      cmd: show configuration protocols pcep
+      args: PE4
+    - type: junos_backup
+      cmd: backup.config
+      args: PE4
+    - type: junos
+      cmd: load.config
+      args:
+        device: PE4
+        config_name: protocol.pcep.northstar.PE4.conf
+
+- name: PE4 PCEP Status Up
+  events:
+    - pcep.status.up.PE4
+  commands:
+    - type: cli
+      cmd: show path-computation-client status
+      args: PE4
+    - type: cli
+      cmd: show path-computation-client statistics
+      args: PE4
+    - type: cli
+      cmd: show configuration protocols pcep
+      args: PE4
