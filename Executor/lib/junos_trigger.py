@@ -26,8 +26,8 @@ class JunosTrigger(ConnDevice):
         :type device_name: str
         :param config_name: Configuration snippet to load
         :type config_name: str
-        :return: Output as a result of loading the new config
-        :rtype: str
+        :return: Output as a result of loading the new config and if it failed or suceeded
+        :rtype: tuple
         """
         dev = self.connected_devices[device_name]
         config_filepath = 'config_snippets/{}'.format(config_name)
@@ -41,7 +41,7 @@ class JunosTrigger(ConnDevice):
         except Exception as e:
             logger.error(e)
             return str(e), False
-        return output
+        return output, True
 
     def execute(self, vars):
         """Executes JunosTrigger valid commands
@@ -68,8 +68,9 @@ class JunosTrigger(ConnDevice):
         if cmd == 'load.config':
             output, status = self._load_config(device_name, config_name)
         else:
-            logger.error('Unsupported JunosTrigger command')
-            return '', False
+            msg = 'Unsupported JunosTrigger command'
+            logger.error(msg)
+            return msg, False
         return output, status
 
 

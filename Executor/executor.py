@@ -96,7 +96,7 @@ class ExecuteCommands(Resource):
                     logger.error('Command type not supported: %s', command['type'])
                     status_message = 'Failed'
                     status = False
-            except KeyError as e:
+            except Exception as e:
                 logger.error('An error occurred %s', e)
                 status_message = 'Failed'
                 python_commands[i]['output'] = 'An error occured'
