@@ -33,4 +33,7 @@ echo "${GREEN}Starting Evaluator...${NC}"
 cd Evaluator
 nohup python evaluate.py &
 cd ..
+echo "${GREEN}Starting Webapp...${NC}"
+cd Frontend/corenet
+nohup npm run dev &
 echo "~Finished starting corenet~"
