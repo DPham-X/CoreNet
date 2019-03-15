@@ -236,10 +236,13 @@ class NorthstarTrigger(object):
 
         logger.debug('Triggering path optimisation')
         try:
-            r = requests.request('POST', path_optimisation_url, data='', headers=headers, verify=self.verify)
+            r = requests.request('POST', path_optimisation_url, data='', hesaders=headers, verify=self.verify)
             response = r.json()
             assert r.status_code == 200, r.status_code
         except AssertionError:
+            # Northstar triggers that have already happened are still considered successful
+            if 'ignored' in response:
+                return response, True
             if response:
                 return response, False
             return {'Error': 'Could not trigger path optimisation, {}'.format(r.status_code)}, False
