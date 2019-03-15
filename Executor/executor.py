@@ -76,6 +76,7 @@ class ExecuteCommands(Resource):
 
         status_message = 'Completed'
         status = True
+        new_uuid = str(uuid.uuid4())
         python_commands = json.loads(args.commands)
 
         for i, command in enumerate(python_commands):
@@ -106,10 +107,9 @@ class ExecuteCommands(Resource):
                 if not output or status is False :
                     status_message = 'Failed'
 
-        self.send_execution(args, python_commands, status_message)
+        self.send_execution(args, python_commands, status_message, new_uuid)
 
-    def send_execution(self, args, python_commands, status_message):
-        new_uuid = str(uuid.uuid4())
+    def send_execution(self, args, python_commands, status_message, new_uuid):
         name = args.evaluation_name
         binded_events = args.binded_events
         time = datetime.now().isoformat()
