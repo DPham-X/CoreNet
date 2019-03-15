@@ -2,5 +2,5 @@
 # Authentication for NorthStar API
 username: admin
 password: Juniper123!
-hostname: 10.49.227.136
+hostname: 100.0.1.17
 port: 8443
