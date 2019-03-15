@@ -24,6 +24,7 @@
     - type: northstar
       cmd: trigger.optimisation
       args: None
+
 - name: P1 Interface Up
   events:
     - oper_status.interface.up.P1
@@ -43,6 +44,7 @@
     - type: northstar
       cmd: trigger.optimisation
       args: None
+
 - name: P2 Interface Down
   events:
     - oper_status.interface.down.P2
@@ -63,6 +65,7 @@
     - type: northstar
       cmd: trigger.optimisation
       args: None
+
 - name: P2 Interface Up
   events:
     - oper_status.interface.up.P2
@@ -77,6 +80,7 @@
     - type: northstar
       cmd: trigger.optimisation
       args: None
+
 - name: P3 Interface Down
   events:
     - oper_status.interface.down.P3
@@ -97,6 +101,7 @@
     - type: northstar
       cmd: trigger.optimisation
       args: None
+
 - name: P3 Interface Up
   events:
     - oper_status.interface.up.P3
@@ -128,6 +133,7 @@
     - type: northstar
       cmd: trigger.optimisation
       args: None
+
 - name: P1 BGP Peers Up
   events:
     - bgp.peers.up.P1
