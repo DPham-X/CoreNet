@@ -54,8 +54,8 @@ def initialise_db(db_name):
     if db_name not in glob('*'):
         logger.info('Creating new database \'%s\'', db_name)
         db.create_all()
-    else:
-        logger.info('Existing database \'%s\' already exists', db_name)
+    # else:
+        # logger.info('Existing database \'%s\' already exists', db_name)
 
 
 def add_event_to_db(event):
@@ -64,6 +64,8 @@ def add_event_to_db(event):
     :param event: Database model that has been filled out
     :type event: db.model object
     """
+    # Ensure DB has been init
+    initialise_db(DATABASE_NAME)
     try:
         engine.execute(Event.__table__.insert(),[{
             'uuid': event.uuid,
@@ -86,6 +88,8 @@ def add_execution_to_db(execution):
     :param execution: Database model that has been filled out
     :type execution: db.model object
     """
+    # Ensure DB has been init
+    initialise_db(DATABASE_NAME)
     try:
         engine.execute(Execution.__table__.insert(),[{
             'uuid': execution.uuid,
@@ -269,7 +273,6 @@ api.add_resource(DBGetExecutionsLast,    '/get_executions_last')
 
 
 if __name__ == '__main__':
-    initialise_db(DATABASE_NAME)
     logger.info('Starting WSGI Server %s:%s', HOST, DB_PORT)
     http_server = WSGIServer((HOST, DB_PORT), app)
     http_server.serve_forever()
