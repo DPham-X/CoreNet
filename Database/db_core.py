@@ -27,9 +27,10 @@ db.session = scoped_session(sessionmaker(autocommit=False,
                                          autoflush=False,
                                          bind=engine,
                                          expire_on_commit=False))
-
 api = Api(app)
 CORS(app)
+db.app = app
+db.init_app(app)
 
 # API Parsing
 parser = reqparse.RequestParser()
