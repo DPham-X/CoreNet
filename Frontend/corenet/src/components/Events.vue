@@ -48,7 +48,7 @@
             <b-card>
               <b-row class="mb-2 details">
                 <b-col sm="3" class="text-sm-right"><b>Body:</b></b-col>
-                <b-col>{{ row.item.body }}</b-col>
+                <b-col v-html="row.item.body"></b-col>
               </b-row>
               <b-button size="sm" @click="row.toggleDetails">Hide Details</b-button>
             </b-card>
@@ -111,7 +111,6 @@ export default {
         {
           key: 'body',
           label: 'Details',
-          formatter: 'convertBreak'
         }
       ],
       totalRows: 50,
@@ -128,7 +127,7 @@ export default {
       if (this.status === false) {
         return
       }
-      const link = 'http://0.0.0.0:5000/'
+      const link = 'http://10.49.225.152:5000/'
       const apiLink = link + 'get_events_last'
 
       axios
@@ -210,8 +209,12 @@ export default {
       return str.join(' ')
     },
     toString: function (string) {
-      let y = yaml.dump(JSON.parse(JSON.stringify(string)))
+      let y = this.convertBreak(yaml.dump(JSON.parse(JSON.stringify(string))))
       return y
+    },
+    toJson: function (string) {
+      let output = JSON.stringify(string)
+      return output
     },
     onFiltered: function (filteredItems) {
       // Trigger pagination to update the number of buttons/pages due to filtering
