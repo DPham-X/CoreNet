@@ -127,7 +127,7 @@ export default {
       if (this.status === false) {
         return
       }
-      const link = 'http://10.49.225.152:5000/'
+      const link = 'http://0.0.0.0:5000/'
       const apiLink = link + 'get_events_last'
 
       axios
