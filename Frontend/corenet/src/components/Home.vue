@@ -23,7 +23,7 @@
       </b-col>
       <b-col md="*" order="2">
         <b-card
-          header="Last 60s of events"
+          header="Last 100 events summary"
           class="text-center card-settings card h-100"
           header-text-variant="white"
           border-variant="dark"
@@ -55,7 +55,7 @@
       </b-col>
       <b-col md="*" order="4">
         <b-card
-          header="Device Status"
+          header="Device Health"
           class="text-center card-settings card h-100"
           header-text-variant="white"
           border-variant="dark"
@@ -63,9 +63,9 @@
         >
           <b-card-text class="text-left">
             <ul class="list-group list-group-flush borderless" >
-              <li v-for="(device, index) in deviceStatus" :key="`events-${index}`">
-                  <div class="list-group-item description borderless left">{{ device.name }}</div>
-                  <div class="list-group-item description borderless right">{{ device.status }}</div>
+              <li v-for="(status, name) in deviceStatus" :key="`events-${name}`">
+                  <div class="list-group-item description borderless left">{{ name }}</div>
+                  <div class="list-group-item description borderless right">{{ status }}</div>
               </li>
             </ul>
           </b-card-text>
@@ -92,23 +92,14 @@ export default {
     return {
       pagename: 'Home',
       recentEvents: [],
-      deviceStatus: [
-        {'name': 'P1', 'status': 'Unhealthy'},
-        {'name': 'P2', 'status': 'Healthy'},
-        {'name': 'P3', 'status': 'Healthy'},
-        {'name': 'PE1', 'status': 'Unhealthy'},
-        {'name': 'PE2', 'status': 'Healthy'}
-      ],
+      deviceStatus: {},
       recentExecutions: [],
-      lastEvents: [
-        {'test': '1'}
-      ],
       chartdata: {
         datacollection: {
-          labels: ['Information', 'Warning', 'Critical'],
+          labels: ['Information', 'Warning', 'Critical', 'Unknown'],
           datasets: [
             {
-              data: [10, 5, 1],
+              data: [],
               backgroundColor: ['#99cc33', '#EEC200', '#cc3300']
             }
           ]
@@ -156,6 +147,76 @@ export default {
           console.log(error)
         })
     },
+    getEvents: function () {
+      const link = host
+      const apiLink = link + 'get_events_last'
+
+      var informationCount = 0
+      var warningCount = 0
+      var criticalCount = 0
+      var unknownCount = 0
+      axios
+        .get(apiLink)
+        .then(response => {
+          var data = response.data
+          for (var i = 0; i < data.length; i++) {
+            if (data[i].priority === 'information') {
+              informationCount++
+            } else if (data[i].priority === 'warning') {
+              warningCount++
+            } else if (data[i].priority === 'critical') {
+              criticalCount++
+            } else {
+              unknownCount++
+            }
+          }
+          var dataset = []
+          dataset.push(informationCount)
+          dataset.push(warningCount)
+          dataset.push(criticalCount)
+          dataset.push(unknownCount)
+
+          this.chartdata.datacollection.datasets[0].data = dataset
+          this.createChart('recent-chart', this.chartdata)
+          return data
+        })
+        .catch(error => {
+          console.log(error)
+        })
+    },
+    checkDeviceHealth: function () {
+      const link = host
+      const apiLink = link + 'get_events_last'
+
+      var deviceList = {
+        'P1': 'Healthy',
+        'P2': 'Healthy',
+        'P3': 'Healthy',
+        'PE1': 'Healthy',
+        'PE2': 'Healthy',
+        'PE3': 'Healthy',
+        'PE4': 'Healthy'
+      }
+      axios
+        .get(apiLink)
+        .then(response => {
+          var data = response.data
+          for (var i = 0; i < data.length; i++) {
+            if (data[i].priority === 'critical') {
+              var eventList = data[i].name.split('.')
+              var deviceName = eventList[eventList.length - 1]
+
+              if (deviceName in deviceList) {
+                deviceList[deviceName] = 'Unhealthy'
+              }
+            }
+          }
+          this.deviceStatus = deviceList
+        })
+        .catch(error => {
+          console.log(error)
+        })
+    },
     convertIsoDate: function (isodate) {
       let date = new Date(isodate)
       let year = date.getFullYear()
@@ -188,6 +249,8 @@ export default {
   created () {
     this.getCriticalEvents()
     this.getExecutions()
+    this.getEvents()
+    this.checkDeviceHealth()
   }
 }
 </script>
