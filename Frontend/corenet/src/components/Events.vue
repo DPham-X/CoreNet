@@ -110,7 +110,7 @@ export default {
         },
         {
           key: 'body',
-          label: 'Details',
+          label: 'Details'
         }
       ],
       totalRows: 50,
