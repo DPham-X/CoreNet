@@ -137,12 +137,12 @@ class DBCreateEvent(Resource):
 
 class DBGetEventsLast(Resource):
     def get(self):
-        """GET method that retrieves the 50 most recent Events
+        """GET method that retrieves the 100 most recent Events
 
         :return: A list of Events"""
         output = []
         try:
-            queries = Event.query.order_by(Event.time.desc()).limit(50)
+            queries = Event.query.order_by(Event.time.desc()).limit(100)
         except OperationalError:
             return {'Error': 'Database is currently empty'}, 400
 
@@ -279,6 +279,29 @@ class DBGetExecutionsLast(Resource):
             output.append(query_serialised)
         return output, 200, {'Access-Control-Allow-Origin': '*'}
 
+class DBGetExecutionsLast10(Resource):
+    def get(self):
+        """GET method for retrieving the 20 most recent Executions
+
+        :return: a list of Executions
+        """
+        try:
+            queries = Execution.query.order_by(Execution.time.desc()).limit(10)
+        except OperationalError:
+            return {'Error': 'Database is currently empty'}, 400
+        output = []
+        for query in queries:
+            query_serialised = {
+                'uuid': query.uuid,
+                'name': query.name,
+                'binded_events': json.loads(query.binded_events),
+                'time': query.time,
+                'commands': json.loads(query.commands),
+                'status': query.status,
+            }
+            output.append(query_serialised)
+        return output, 200, {'Access-Control-Allow-Origin': '*'}
+
 initialise_db(DATABASE_NAME)
 
 # Routes for the Database API
@@ -290,6 +313,7 @@ api.add_resource(DBGetEventsInterval,    '/get_events_interval')
 # Executions
 api.add_resource(DBCreateExecution,      '/create_execution')
 api.add_resource(DBGetExecutionsLast,    '/get_executions_last')
+api.add_resource(DBGetExecutionsLast10,    '/get_executions_last10')
 
 
 if __name__ == '__main__':
