@@ -23,22 +23,15 @@
       </b-col>
       <b-col md="*" order="2">
         <b-card
-          header="Device Status"
+          header="Last 60s of events"
           class="text-center card-settings card h-100"
           header-text-variant="white"
           border-variant="dark"
           header-bg-variant="dark"
         >
-          <b-card-text class="text-left">
-            <ul class="list-group list-group-flush borderless" >
-              <li v-for="(device, index) in deviceStatus" :key="`events-${index}`">
-                  <div class="list-group-item description borderless left">{{ device.name }}</div>
-                  <div class="list-group-item description borderless right">{{ device.status }}</div>
-              </li>
-            </ul>
-          </b-card-text>
+        <canvas id="recent-chart"></canvas>
         </b-card>
-        </b-col>
+      </b-col>
     </b-row>
     <div class="bottom-pad"></div>
     <b-row align-h="around">
@@ -62,13 +55,20 @@
       </b-col>
       <b-col md="*" order="4">
         <b-card
-          header="Last 60s of events"
+          header="Device Status"
           class="text-center card-settings card h-100"
           header-text-variant="white"
           border-variant="dark"
           header-bg-variant="dark"
         >
-        <canvas id="recent-chart"></canvas>
+          <b-card-text class="text-left">
+            <ul class="list-group list-group-flush borderless" >
+              <li v-for="(device, index) in deviceStatus" :key="`events-${index}`">
+                  <div class="list-group-item description borderless left">{{ device.name }}</div>
+                  <div class="list-group-item description borderless right">{{ device.status }}</div>
+              </li>
+            </ul>
+          </b-card-text>
         </b-card>
         </b-col>
     </b-row>
@@ -99,10 +99,7 @@ export default {
         {'name': 'PE1', 'status': 'Unhealthy'},
         {'name': 'PE2', 'status': 'Healthy'}
       ],
-      recentExecutions: [
-        {'name': 'P1 BGP Down', 'status': 'Completed'},
-        {'name': 'P2 Interface Down', 'status': 'Error'}
-      ],
+      recentExecutions: [],
       lastEvents: [
         {'test': '1'}
       ],
@@ -146,6 +143,19 @@ export default {
           console.log(error)
         })
     },
+    getExecutions: function () {
+      const link = host
+      const apiLink = link + 'get_executions_last10'
+
+      axios
+        .get(apiLink)
+        .then(response => {
+          this.recentExecutions = response.data
+        })
+        .catch(error => {
+          console.log(error)
+        })
+    },
     convertIsoDate: function (isodate) {
       let date = new Date(isodate)
       let year = date.getFullYear()
@@ -177,6 +187,7 @@ export default {
   },
   created () {
     this.getCriticalEvents()
+    this.getExecutions()
   }
 }
 </script>
@@ -196,11 +207,13 @@ h1, h2 {
 }
 ul {
   list-style-type: none;
+  font-size: 0;
   padding: 0;
+  line-height: 10px;
 }
 li {
   display: inline-block;
-  margin: 0 10px;
+  font-size: 16px;
 }
 a {
   color: #42b983;
