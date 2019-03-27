@@ -14,7 +14,8 @@
           <b-card-text class="text-left">
             <ul class="list-group list-group-flush" >
               <li v-for="(events, index) in recentEvents" :key="`events-${index}`">
-                  <div class="list-group-item">{{ events }}</div>
+                  <div class="list-group-item description borderless left">{{ convertIsoDate(events.time) }}</div>
+                  <div class="list-group-item description borderless right">{{ events.name }}</div>
               </li>
             </ul>
           </b-card-text>
@@ -31,8 +32,8 @@
           <b-card-text class="text-left">
             <ul class="list-group list-group-flush borderless" >
               <li v-for="(device, index) in deviceStatus" :key="`events-${index}`">
-                  <div class="list-group-item description left">{{ device.name }}</div>
-                  <div class="list-group-item description right">{{ device.status }}</div>
+                  <div class="list-group-item description borderless left">{{ device.name }}</div>
+                  <div class="list-group-item description borderless right">{{ device.status }}</div>
               </li>
             </ul>
           </b-card-text>
@@ -80,6 +81,7 @@
 import Chart from 'chart.js'
 import { Doughnut } from 'vue-chartjs'
 import { host } from '../variable.js'
+import axios from 'axios'
 
 export default {
   extends: Doughnut,
@@ -89,11 +91,7 @@ export default {
   data () {
     return {
       pagename: 'Home',
-      recentEvents: [
-        'ospf.interface.down.P1',
-        'network.interface.down.P1',
-        'bgp.peers.down.P1'
-      ],
+      recentEvents: [],
       deviceStatus: [
         {'name': 'P1', 'status': 'Unhealthy'},
         {'name': 'P2', 'status': 'Healthy'},
@@ -134,7 +132,51 @@ export default {
         options: chartData.chartOptions
       })
       return myChart
+    },
+    getCriticalEvents: function () {
+      const link = host
+      const apiLink = link + 'get_events_last_critical'
+
+      axios
+        .get(apiLink)
+        .then(response => {
+          this.recentEvents = response.data
+        })
+        .catch(error => {
+          console.log(error)
+        })
+    },
+    convertIsoDate: function (isodate) {
+      let date = new Date(isodate)
+      let year = date.getFullYear()
+      let month = date.getMonth() + 1
+      let dt = date.getDate()
+      let hour = date.getHours()
+      let minutes = date.getMinutes()
+      let seconds = date.getSeconds()
+
+      if (dt < 10) {
+        dt = '0' + dt
+      }
+      if (month < 10) {
+        month = '0' + month
+      }
+      if (hour < 10) {
+        hour = '0' + hour
+      }
+      if (minutes < 10) {
+        minutes = '0' + minutes
+      }
+      if (seconds < 10) {
+        seconds = '0' + seconds
+      }
+
+      let output = dt + '/' + month + '/' + year + ' ' + hour + ':' + minutes + ':' + seconds
+      return output
     }
+  },
+  created () {
+    this.getCriticalEvents()
   }
 }
 </script>
