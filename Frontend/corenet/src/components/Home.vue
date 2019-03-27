@@ -79,6 +79,7 @@
 <script>
 import Chart from 'chart.js'
 import { Doughnut } from 'vue-chartjs'
+import { host } from '../variable.js'
 
 export default {
   extends: Doughnut,

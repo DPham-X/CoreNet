@@ -75,6 +75,8 @@
 import axios from 'axios'
 import yaml from 'js-yaml'
 
+import { host } from '../variable.js'
+
 export default {
   name: 'Executions',
   data () {
@@ -130,7 +132,7 @@ export default {
       if (this.status === false) {
         return
       }
-      const link = 'http://0.0.0.0:5000/'
+      const link = host
       const apiLink = link + 'get_executions_last'
 
       axios
