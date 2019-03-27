@@ -158,6 +158,28 @@ class DBGetEventsLast(Resource):
             output.append(query_serialised)
         return output, 200, {'Access-Control-Allow-Origin': '*'}
 
+class DBGetEventsLastCritical(Resource):
+    def get(self):
+        """GET method that retrieves the 10 most recent Critical events
+
+        :return: A list of Events"""
+        output = []
+        try:
+            queries = Event.query.order_by(Event.time.desc()).filter(Event.priority == 'critical').limit(10)
+        except OperationalError:
+            return {'Error': 'Database is currently empty'}, 400
+
+        for query in queries:
+            query_serialised = {
+                'uuid': query.uuid,
+                'time': query.time,
+                'name': query.name,
+                'type': query.type,
+                'priority': query.priority,
+                'body': json.loads(query.body)
+            }
+            output.append(query_serialised)
+        return output, 200, {'Access-Control-Allow-Origin': '*'}
 
 class DBGetEventsInterval(Resource):
     def get(self):
@@ -263,6 +285,7 @@ initialise_db(DATABASE_NAME)
 # Events
 api.add_resource(DBCreateEvent,          '/create_event')
 api.add_resource(DBGetEventsLast,        '/get_events_last')
+api.add_resource(DBGetEventsLastCritical,'/get_events_last_critical')
 api.add_resource(DBGetEventsInterval,    '/get_events_interval')
 # Executions
 api.add_resource(DBCreateExecution,      '/create_execution')
