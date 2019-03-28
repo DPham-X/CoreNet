@@ -142,7 +142,7 @@ class DBGetEventsLast(Resource):
         :return: A list of Events"""
         output = []
         try:
-            queries = Event.query.order_by(Event.time.desc()).limit(100)
+            queries = db.session.query(Event).order_by(Event.time.desc()).limit(100)
         except OperationalError:
             return {'Error': 'Database is currently empty'}, 400
 
@@ -165,7 +165,7 @@ class DBGetEventsLastCritical(Resource):
         :return: A list of Events"""
         output = []
         try:
-            queries = Event.query.order_by(Event.time.desc()).filter(Event.priority == 'critical').limit(10)
+            queries = db.session.query(Event).order_by(Event.time.desc()).filter(Event.priority == 'critical').limit(10)
         except OperationalError:
             return {'Error': 'Database is currently empty'}, 400
 
@@ -201,7 +201,7 @@ class DBGetEventsInterval(Resource):
             return {'Error': 'end_time has not been defined'}, 400
 
         try:
-            queries = Event.query.filter(Event.time.between(start_time, end_time)).all()
+            queries = db.session.query(Event).filter(Event.time.between(start_time, end_time)).all()
             if not queries:
                 return {'Info': 'Could not find any events for the defined interval'}, 200
             output = []
@@ -263,7 +263,7 @@ class DBGetExecutionsLast(Resource):
         :return: a list of Executions
         """
         try:
-            queries = Execution.query.order_by(Execution.time.desc()).limit(20)
+            queries = db.session.query(Execution).order_by(Execution.time.desc()).limit(20)
         except OperationalError:
             return {'Error': 'Database is currently empty'}, 400
         output = []
@@ -286,7 +286,7 @@ class DBGetExecutionsLast10(Resource):
         :return: a list of Executions
         """
         try:
-            queries = Execution.query.order_by(Execution.time.desc()).limit(10)
+            queries = db.session.query(Execution).order_by(Execution.time.desc()).limit(10)
         except OperationalError:
             return {'Error': 'Database is currently empty'}, 400
         output = []
@@ -313,7 +313,7 @@ api.add_resource(DBGetEventsInterval,    '/get_events_interval')
 # Executions
 api.add_resource(DBCreateExecution,      '/create_execution')
 api.add_resource(DBGetExecutionsLast,    '/get_executions_last')
-api.add_resource(DBGetExecutionsLast10,    '/get_executions_last10')
+api.add_resource(DBGetExecutionsLast10,  '/get_executions_last10')
 
 
 if __name__ == '__main__':
