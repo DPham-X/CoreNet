@@ -17,6 +17,7 @@
               <div class="list-group-item description borderless corner left font-weight-bold">Date</div>
               <div class="list-group-item description borderless corner right font-weight-bold">Event Name</div>
               </li>
+              <li v-if="recentEvents.length == 0" class="list-group-item description borderless2 corner left">No Critical Events found.</li>
               <li v-for="(events, index) in recentEvents" :key="`events-${index}`">
                   <div class="list-group-item description borderless corner left">{{ convertIsoDate(events.time) }}</div>
                   <div class="list-group-item description borderless corner right">{{ events.name }}</div>
@@ -53,6 +54,7 @@
               <div class="list-group-item description borderless corner left font-weight-bold">Execution Name</div>
               <div class="list-group-item description borderless corner right font-weight-bold text-right">Status</div>
               </li>
+              <li v-if="recentExecutions.length == 0" class="list-group-item description borderless2 corner left">No Executions found.</li>
               <li v-for="(executions, index) in recentExecutions" :key="`events-${index}`">
                 <div class="list-group-item description borderless corner left text-left">{{ executions.name }}</div>
                 <div class="list-group-item description borderless corner right text-right">
@@ -128,6 +130,9 @@ export default {
         }
       }
     }
+  },
+  created () {
+    this.start()
   },
   methods: {
     createChart: function (chartID, chartData) {
@@ -262,13 +267,18 @@ export default {
 
       let output = dt + '/' + month + '/' + year + ' ' + hour + ':' + minutes + ':' + seconds
       return output
+    },
+    updateDashboard: function () {
+      this.getCriticalEvents()
+      this.getExecutions()
+      this.getEvents()
+      this.checkDeviceHealth()
+      console.log('Dashboard updated')
+    },
+    start: function () {
+      this.updateDashboard()
+      setInterval(this.updateDashboard, 30000)
     }
-  },
-  created () {
-    this.getCriticalEvents()
-    this.getExecutions()
-    this.getEvents()
-    this.checkDeviceHealth()
   }
 }
 </script>
@@ -314,6 +324,12 @@ a {
 }
 .borderless {
   border-top: 1px solid black;
+  border-bottom: 0 none;
+  border-left: 0 none;
+  border-right: 0 none;
+}
+.borderless2 {
+  border-top: 0 none;
   border-bottom: 0 none;
   border-left: 0 none;
   border-right: 0 none;
