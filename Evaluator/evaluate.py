@@ -178,12 +178,16 @@ class Evaluator(object):
         # Ensure start and end times are in iso8601 format
         query_url = '{}?start_time={}&end_time={}'.format(self.get_events_interval_url, start_time, end_time)
         logger.info('Querying %s', query_url)
-        r = requests.get(query_url, timeout=10)
-        if r.status_code != 200:
-            logger.error('Query was unsuccessful')
-            return
-        logger.info('Query successful')
-        self.events = r.json()
+        try:
+            r = requests.get(query_url, timeout=60)
+            if r.status_code != 200:
+                logger.error('Query was unsuccessful')
+                return
+        except requests.exceptions.ReadTimeout:
+            logger.info('Timed out..')
+        else:
+            logger.info('Query successful')
+            self.events = r.json()
 
     def _evaluate_events(self):
         """Determine which events to execute based on the configuration that
