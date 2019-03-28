@@ -12,10 +12,14 @@
           header-bg-variant="dark"
         >
           <b-card-text class="text-left">
-            <ul class="list-group list-group-flush" >
+            <ul class="list-group" >
+              <li>
+              <div class="list-group-item description borderless corner left font-weight-bold">Date</div>
+              <div class="list-group-item description borderless corner right font-weight-bold">Event Name</div>
+              </li>
               <li v-for="(events, index) in recentEvents" :key="`events-${index}`">
-                  <div class="list-group-item description borderless left">{{ convertIsoDate(events.time) }}</div>
-                  <div class="list-group-item description borderless right">{{ events.name }}</div>
+                  <div class="list-group-item description borderless corner left">{{ convertIsoDate(events.time) }}</div>
+                  <div class="list-group-item description borderless corner right">{{ events.name }}</div>
               </li>
             </ul>
           </b-card-text>
@@ -37,17 +41,24 @@
     <b-row align-h="around">
       <b-col md="*" order="3">
         <b-card
-          header="Recent Executions"
+          header="Last 10 Executions"
           class="text-center card-settings h-100"
           header-text-variant="white"
           border-variant="dark"
           header-bg-variant="dark"
         >
           <b-card-text class="text-left">
-            <ul class="list-group list-group-flush" >
+            <ul class="list-group" >
+              <li>
+              <div class="list-group-item description borderless corner left font-weight-bold">Execution Name</div>
+              <div class="list-group-item description borderless corner right font-weight-bold text-right">Status</div>
+              </li>
               <li v-for="(executions, index) in recentExecutions" :key="`events-${index}`">
-                <div class="list-group-item description left text-left">{{ executions.name }}</div>
-                <div class="list-group-item description right text-right">{{ executions.status }}</div>
+                <div class="list-group-item description borderless corner left text-left">{{ executions.name }}</div>
+                <div class="list-group-item description borderless corner right text-right">
+                    <div v-if="executions.status === 'Completed'" style="color: green;"> {{ executions.status }} </div>
+                    <div v-else style="color: red;"> {{ executions.status }} </div>
+                </div>
               </li>
             </ul>
           </b-card-text>
@@ -62,10 +73,17 @@
           header-bg-variant="dark"
         >
           <b-card-text class="text-left">
-            <ul class="list-group list-group-flush borderless" >
+            <ul class="list-group">
+              <li>
+              <div class="list-group-item description borderless corner left font-weight-bold">Device Name</div>
+              <div class="list-group-item description borderless corner right font-weight-bold text-right">Health</div>
+              </li>
               <li v-for="(status, name) in deviceStatus" :key="`events-${name}`">
-                  <div class="list-group-item description borderless left">{{ name }}</div>
-                  <div class="list-group-item description borderless right">{{ status }}</div>
+                  <div class="list-group-item description borderless corner left text-left">{{ name }}</div>
+                  <div class="list-group-item description borderless corner right text-right">
+                    <div v-if="status === 'Healthy'" style="color: green;"> {{ status }} </div>
+                    <div v-else-if="status === 'Unhealthy'" style="color: red;"> {{ status }} </div>
+                  </div>
               </li>
             </ul>
           </b-card-text>
@@ -86,7 +104,7 @@ import axios from 'axios'
 export default {
   extends: Doughnut,
   mounted () {
-    this.createChart('recent-chart', this.chartdata)
+    // this.createChart('recent-chart', this.chartdata)
   },
   data () {
     return {
@@ -295,7 +313,7 @@ a {
   background-color: white;
 }
 .borderless {
-  border-top: 0 none;
+  border-top: 1px solid black;
   border-bottom: 0 none;
   border-left: 0 none;
   border-right: 0 none;
@@ -311,5 +329,8 @@ a {
 
 .right {
     float: right;
+}
+.corner {
+  border-radius: 0 !important;
 }
 </style>
