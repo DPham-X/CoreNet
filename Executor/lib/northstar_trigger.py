@@ -245,9 +245,10 @@ class NorthstarTrigger(object):
             assert r.status_code == 200, r.status_code
         except AssertionError:
             # Northstar triggers that have already happened are still considered successful
-            if 'ignored' in response:
-                return response, True
             if response:
+                if 'error' in response:
+                    if 'ignored' in response['error']:
+                        return response, True
                 return response, False
             return {'Error': 'Could not trigger path optimisation, {}'.format(r.status_code)}, False
         logger.info(response['result '])
