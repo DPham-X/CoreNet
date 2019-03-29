@@ -29,6 +29,7 @@ class JunosCollector(object):
         """
         self.connected_devices = {}
         self.network_devices = {}
+        self.broken_devices = {}
         self.db_event_endpoint = '{}:{}/create_event'.format(DATABASE_URL, DATABASE_PORT)
         self._import_network_devices(config_path)
         self.start_monitoring()
@@ -41,6 +42,7 @@ class JunosCollector(object):
         while True:
             threads = []
             start_time = time.time()
+            self.check_broken_device()
             t = threading.Thread(target=self.t_interface_statuses)
             threads.append(t)
             t = threading.Thread(target=self.t_bgp_peers)
@@ -64,6 +66,7 @@ class JunosCollector(object):
             if sleep_duration < 0:
                 sleep_duration = 0
             time.sleep(sleep_duration)
+
     def t_interface_statuses(self):
         # Interface Status
         device_interface_statuses = self.get_interface_status()
@@ -130,12 +133,13 @@ class JunosCollector(object):
         """
         try:
             logger.debug('Connecting to %s', device['ip'])
-            dev = Device(host=device['ip'], user=device['user'], password=device['password']).open()
+            dev = Device(host=device['ip'], user=device['user'], password=device['password'], attempts=3, auto_probe=5)
+            dev.open()
             logger.info('Successfully connected to %s', device['ip'])
         except ConnectError as e:
             logger.error('%s', str(e))
-            raise ConnectError(e)
-        else:
+            self.broken_devices[device['name']] = dev
+        finally:
             self.connected_devices[device['name']] = dev
 
     def _create_event(self, name, type, priority, body):
@@ -162,16 +166,46 @@ class JunosCollector(object):
         }
         return event
 
+    def check_broken_device(self):
+        for dev_name, dev in self.broken_devices.items():
+            try:
+                dev.open()
+                self.broken_devices.pop(dev_name)
+                self.send_connection_error(True, dev_name, 'Reconnected to device {}'.format(dev_name))
+            except Exception as e:
+                logger.error(e)
+                self.send_connection_error(False, dev_name, e)
+
+    def send_connection_error(self, status, device_name, msg):
+        if status is True:
+            event = self._create_event(name='connection.up.{}'.format(device_name),
+                                        type='connection',
+                                        priority='information',
+                                        body={'Information': str(msg)})
+            self.add_event_to_db(event)
+            logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
+        else:
+            event = self._create_event(name='connection.down.{}'.format(device_name),
+                                        type='connection',
+                                        priority='critical',
+                                        body={'error': str(msg)})
+            self.add_event_to_db(event)
+            logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
+
     def get_interface_status(self):
         device_interface_statuses = {}
         rpc_replies = {}
         to_monitor = ['ge-0/0/0', 'ge-0/0/1', 'ge-0/0/2', 'ge-0/0/0.0', 'ge-0/0/1.0', 'ge-0/0/2.0']
         for dev_name, connected_dev in self.connected_devices.items():
             if connected_dev is None:
-                return
+                continue
 
-            rpc_reply = connected_dev.rpc.get_interface_information(terse=True)
-            rpc_replies[dev_name] = rpc_reply
+            try:
+                rpc_reply = connected_dev.rpc.get_interface_information(terse=True)
+            except ConnectError as e:
+                self.broken_devices[dev_name] = connected_dev
+            else:
+                rpc_replies[dev_name] = rpc_reply
 
         for dev_name, rpc_reply in rpc_replies.items():
             device_interface_statuses[dev_name] = []
@@ -198,12 +232,16 @@ class JunosCollector(object):
         to_monitor = ['P1', 'P2', 'P3']
         for dev_name, connected_dev in self.connected_devices.items():
             if connected_dev is None:
-                return
+                continue
             if dev_name not in to_monitor:
                 continue
 
-            rpc_reply = connected_dev.rpc.get_bgp_summary_information()
-            rpc_replies[dev_name] = rpc_reply
+            try:
+                rpc_reply = connected_dev.rpc.get_bgp_summary_information()
+            except ConnectError as e:
+                self.broken_devices[dev_name] = connected_dev
+            else:
+                rpc_replies[dev_name] = rpc_reply
 
         for dev_name, rpc_reply in rpc_replies.items():
             device_bgp_peer_count[dev_name] = {}
@@ -229,12 +267,16 @@ class JunosCollector(object):
         to_monitor = ['P1', 'P2', 'P3', 'PE1', 'PE2', 'PE3', 'PE4']
         for dev_name, connected_dev in self.connected_devices.items():
             if connected_dev is None:
-                return
+                continue
             if dev_name not in to_monitor:
                 continue
 
-            rpc_reply = connected_dev.rpc.get_ldp_session_information()
-            rpc_replies[dev_name] = rpc_reply
+            try:
+                rpc_reply = connected_dev.rpc.get_ldp_session_information()
+            except ConnectError as e:
+                self.broken_devices[dev_name] = connected_dev
+            else:
+                rpc_replies[dev_name] = rpc_reply
 
         for dev_name, rpc_reply in rpc_replies.items():
             ldp_neighbors[dev_name] = {}
@@ -257,12 +299,16 @@ class JunosCollector(object):
         to_monitor = ['P1', 'P2', 'P3', 'PE1', 'PE2', 'PE3', 'PE4']
         for dev_name, connected_dev in self.connected_devices.items():
             if connected_dev is None:
-                return
+                continue
             if dev_name not in to_monitor:
                 continue
 
-            rpc_reply = connected_dev.rpc.get_ospf_neighbor_information()
-            rpc_replies[dev_name] = rpc_reply
+            try:
+                rpc_reply = connected_dev.rpc.get_ospf_neighbor_information()
+            except ConnectError as e:
+                self.broken_devices[dev_name] = connected_dev
+            else:
+                rpc_replies[dev_name] = rpc_reply
 
         for dev_name, rpc_reply in rpc_replies.items():
             o_ospf_neighbors[dev_name] = {}
@@ -293,12 +339,16 @@ class JunosCollector(object):
 
         for dev_name, connected_dev in self.connected_devices.items():
             if connected_dev is None:
-                return
+                continue
             if dev_name not in to_monitor:
                 continue
 
-            rpc_reply = connected_dev.rpc.get_ospf_interface_information()
-            rpc_replies[dev_name] = rpc_reply
+            try:
+                rpc_reply = connected_dev.rpc.get_ospf_interface_information()
+            except ConnectError as e:
+                self.broken_devices[dev_name] = connected_dev
+            else:
+                rpc_replies[dev_name] = rpc_reply
 
         for dev_name, rpc_reply in rpc_replies.items():
             try:
@@ -328,12 +378,16 @@ class JunosCollector(object):
 
         for dev_name, connected_dev in self.connected_devices.items():
             if connected_dev is None:
-                return
+                continue
             if dev_name not in to_monitor:
                 continue
 
-            rpc_reply = connected_dev.rpc.get_path_computation_client_status()
-            rpc_replies[dev_name] = rpc_reply
+            try:
+                rpc_reply = connected_dev.rpc.get_path_computation_client_status()
+            except ConnectError as e:
+                self.broken_devices[dev_name] = connected_dev
+            else:
+                rpc_replies[dev_name] = rpc_reply
 
         for dev_name, rpc_reply in rpc_replies.items():
             try:
