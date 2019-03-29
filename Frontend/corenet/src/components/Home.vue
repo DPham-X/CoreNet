@@ -5,22 +5,24 @@
     <b-row align-h="around">
       <b-col md="*" order="1">
         <b-card
-          header="Recent Critical Events"
-          class="text-center card-settings h-100"
+          header="Device Health"
+          class="text-center card-settings card h-100"
           header-text-variant="white"
           border-variant="dark"
           header-bg-variant="dark"
         >
           <b-card-text class="text-left">
-            <ul class="list-group" >
+            <ul class="list-group">
               <li>
-              <div class="list-group-item description borderless corner left font-weight-bold">Date</div>
-              <div class="list-group-item description borderless corner right font-weight-bold">Event Name</div>
+              <div class="list-group-item description borderless corner left font-weight-bold">Device Name</div>
+              <div class="list-group-item description borderless corner right font-weight-bold text-right">Health</div>
               </li>
-              <li v-if="recentEvents.length == 0" class="list-group-item description borderless2 corner left">No Critical Events found.</li>
-              <li v-for="(events, index) in recentEvents" :key="`events-${index}`">
-                  <div class="list-group-item description borderless corner left">{{ convertIsoDate(events.time) }}</div>
-                  <div class="list-group-item description borderless corner right">{{ events.name }}</div>
+              <li v-for="(status, name) in deviceStatus" :key="`events-${name}`">
+                  <div class="list-group-item description borderless corner left text-left">{{ name }}</div>
+                  <div class="list-group-item description borderless corner right text-right">
+                    <div v-if="status === 'Healthy'" style="color: green;"> {{ status }} </div>
+                    <div v-else-if="status === 'Unhealthy'" style="color: red;"> {{ status }} </div>
+                  </div>
               </li>
             </ul>
           </b-card-text>
@@ -68,24 +70,22 @@
       </b-col>
       <b-col md="*" order="4">
         <b-card
-          header="Device Health"
-          class="text-center card-settings card h-100"
+          header="Recent Critical Events"
+          class="text-center card-settings h-100"
           header-text-variant="white"
           border-variant="dark"
           header-bg-variant="dark"
         >
           <b-card-text class="text-left">
-            <ul class="list-group">
+            <ul class="list-group" >
               <li>
-              <div class="list-group-item description borderless corner left font-weight-bold">Device Name</div>
-              <div class="list-group-item description borderless corner right font-weight-bold text-right">Health</div>
+              <div class="list-group-item description borderless corner left font-weight-bold">Date</div>
+              <div class="list-group-item description borderless corner right font-weight-bold">Event Name</div>
               </li>
-              <li v-for="(status, name) in deviceStatus" :key="`events-${name}`">
-                  <div class="list-group-item description borderless corner left text-left">{{ name }}</div>
-                  <div class="list-group-item description borderless corner right text-right">
-                    <div v-if="status === 'Healthy'" style="color: green;"> {{ status }} </div>
-                    <div v-else-if="status === 'Unhealthy'" style="color: red;"> {{ status }} </div>
-                  </div>
+              <li v-if="recentEvents.length == 0" class="list-group-item description borderless2 corner left">No Critical Events found.</li>
+              <li v-for="(events, index) in recentEvents" :key="`events-${index}`">
+                  <div class="list-group-item description borderless corner left">{{ convertIsoDate(events.time) }}</div>
+                  <div class="list-group-item description borderless corner right">{{ events.name }}</div>
               </li>
             </ul>
           </b-card-text>
