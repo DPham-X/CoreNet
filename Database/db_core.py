@@ -203,7 +203,7 @@ class DBGetEventsInterval(Resource):
         try:
             queries = db.session.query(Event).filter(Event.time.between(start_time, end_time)).all()
             if not queries:
-                return {'Info': 'Could not find any events for the defined interval'}, 200
+                return [], 200, {'Access-Control-Allow-Origin': '*'}
             output = []
             for query in queries:
                 query_serialised = {
@@ -252,8 +252,8 @@ class DBCreateExecution(Resource):
 
         db_status = add_execution_to_db(new_event)
         if not db_status:
-            return {'Error': 'Could not add execution to database'}, 400
-        return {'Success': 'New execution added with id {}'.format(args['uuid'])}, 201
+            return {'Error': 'Could not add execution to database'}, 400, {'Access-Control-Allow-Origin': '*'}
+        return {'Success': 'New execution added with id {}'.format(args['uuid'])}, 201, {'Access-Control-Allow-Origin': '*'}
 
 
 class DBGetExecutionsLast(Resource):
@@ -265,7 +265,7 @@ class DBGetExecutionsLast(Resource):
         try:
             queries = db.session.query(Execution).order_by(Execution.time.desc()).limit(20)
         except OperationalError:
-            return {'Error': 'Database is currently empty'}, 400
+            return {'Error': 'Database is currently empty'}, 400, {'Access-Control-Allow-Origin': '*'}
         output = []
         for query in queries:
             query_serialised = {
@@ -288,7 +288,7 @@ class DBGetExecutionsLast10(Resource):
         try:
             queries = db.session.query(Execution).order_by(Execution.time.desc()).limit(10)
         except OperationalError:
-            return {'Error': 'Database is currently empty'}, 400
+            return {'Error': 'Database is currently empty'}, 400, {'Access-Control-Allow-Origin': '*'}
         output = []
         for query in queries:
             query_serialised = {
