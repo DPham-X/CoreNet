@@ -187,7 +187,11 @@ class Evaluator(object):
             logger.info('Timed out..')
         else:
             logger.info('Query successful')
-            self.events = r.json()
+            if isinstance(r.json(), list):
+                self.events = r.json()
+            else:
+                logger.error('Something weird was returned')
+                logger.error(r.json)
 
     def _evaluate_events(self):
         """Determine which events to execute based on the configuration that
