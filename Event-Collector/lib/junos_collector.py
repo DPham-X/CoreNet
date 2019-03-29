@@ -10,7 +10,7 @@ from datetime import datetime
 import requests
 import yaml
 from jnpr.junos import Device
-from jnpr.junos.exception import ConnectError
+from jnpr.junos.exception import ConnectError, RpcError
 
 # Constants
 DATABASE_URL = 'http://0.0.0.0'
@@ -136,7 +136,7 @@ class JunosCollector(object):
             dev = Device(host=device['ip'], user=device['user'], password=device['password'], attempts=3, auto_probe=5)
             dev.open()
             logger.info('Successfully connected to %s', device['ip'])
-        except ConnectError as e:
+        except (ConnectError, RpcError) as e:
             logger.error('%s', str(e))
             self.broken_devices[device['name']] = dev
         finally:
@@ -202,7 +202,7 @@ class JunosCollector(object):
 
             try:
                 rpc_reply = connected_dev.rpc.get_interface_information(terse=True)
-            except ConnectError as e:
+            except (ConnectError, RpcError) as e:
                 self.broken_devices[dev_name] = connected_dev
             else:
                 rpc_replies[dev_name] = rpc_reply
@@ -238,7 +238,7 @@ class JunosCollector(object):
 
             try:
                 rpc_reply = connected_dev.rpc.get_bgp_summary_information()
-            except ConnectError as e:
+            except (ConnectError, RpcError) as e:
                 self.broken_devices[dev_name] = connected_dev
             else:
                 rpc_replies[dev_name] = rpc_reply
@@ -273,7 +273,7 @@ class JunosCollector(object):
 
             try:
                 rpc_reply = connected_dev.rpc.get_ldp_session_information()
-            except ConnectError as e:
+            except (ConnectError, RpcError) as e:
                 self.broken_devices[dev_name] = connected_dev
             else:
                 rpc_replies[dev_name] = rpc_reply
@@ -305,7 +305,7 @@ class JunosCollector(object):
 
             try:
                 rpc_reply = connected_dev.rpc.get_ospf_neighbor_information()
-            except ConnectError as e:
+            except (ConnectError, RpcError) as e:
                 self.broken_devices[dev_name] = connected_dev
             else:
                 rpc_replies[dev_name] = rpc_reply
@@ -345,7 +345,7 @@ class JunosCollector(object):
 
             try:
                 rpc_reply = connected_dev.rpc.get_ospf_interface_information()
-            except ConnectError as e:
+            except (ConnectError, RpcError) as e:
                 self.broken_devices[dev_name] = connected_dev
             else:
                 rpc_replies[dev_name] = rpc_reply
@@ -384,7 +384,7 @@ class JunosCollector(object):
 
             try:
                 rpc_reply = connected_dev.rpc.get_path_computation_client_status()
-            except ConnectError as e:
+            except (ConnectError, RpcError) as e:
                 self.broken_devices[dev_name] = connected_dev
             else:
                 rpc_replies[dev_name] = rpc_reply
