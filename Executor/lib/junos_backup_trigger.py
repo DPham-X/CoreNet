@@ -35,7 +35,7 @@ class BackupTrigger(ConnDevice):
         :rtype: str
         """
         command = 'show configuration | no-more'
-        dev = self.connected_devices[args]
+        dev = self.connected_devices[args].open()
 
         logger.info('Executing CLI command: %s', command)
         output = dev.cli(command)

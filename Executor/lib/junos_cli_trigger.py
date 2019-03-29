@@ -4,7 +4,7 @@ import warnings
 
 import cryptography
 from jnpr.junos.utils.start_shell import StartShell
-
+from jnpr.junos.exception import ConnectError
 from .conn_device import ConnDevice
 
 with warnings.catch_warnings():
@@ -39,7 +39,8 @@ class JunosCliTrigger(ConnDevice):
         :return: Output of the command that was ran
         :rtype: str
         """
-        dev = self.connected_devices[args]
+        dev = self.connected_devices[args].open()
+
         logger.info('Executing CLI command: %s', command)
 
         with StartShell(dev) as ss:

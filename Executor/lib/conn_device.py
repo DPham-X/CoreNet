@@ -44,10 +44,9 @@ class ConnDevice(object):
         """
         try:
             logger.debug('Connecting to %s', device['ip'])
-            dev = Device(host=device['ip'], user=device['user'], password=device['password']).open()
+            dev = Device(host=device['ip'], user=device['user'], password=device['password'])
+            dev.open()
             logger.info('Successfully connected to %s', device['ip'])
         except ConnectError as e:
             logger.error('%s', str(e))
-            raise ConnectError(e)
-        else:
-            self.connected_devices[device['name']] = dev
+        self.connected_devices[device['name']] = dev

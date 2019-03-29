@@ -29,7 +29,7 @@ class JunosTrigger(ConnDevice):
         :return: Output as a result of loading the new config and if it failed or suceeded
         :rtype: tuple
         """
-        dev = self.connected_devices[device_name]
+        dev = self.connected_devices[device_name].open()
         config_filepath = 'config_snippets/{}'.format(config_name)
         try:
             with Config(dev, mode='exclusive') as cu, open(config_filepath, 'r') as config_snippet:
