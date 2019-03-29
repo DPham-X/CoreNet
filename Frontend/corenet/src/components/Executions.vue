@@ -52,7 +52,7 @@
           </span>
         </b-table>
 
-        <b-modal id="cmdModal" title="Executed command output" size="xl" class="font-black" style="overflow-x:auto; max-width: 100vh">
+        <b-modal id="cmdModal" title="Executed command output" size="xl" class="font-black" scrollable=true style="overflow-x:auto; max-width: 100vh">
           <div class="font-monospace" v-html="commandOutput"></div>
         </b-modal>
 
