@@ -6,6 +6,7 @@ import time
 import uuid
 from copy import deepcopy
 from datetime import datetime
+from multiprocessing import JoinableQueue
 
 import requests
 import yaml
@@ -20,6 +21,16 @@ DATABASE_PORT = 5000
 logger = logging.getLogger(__name__)
 
 
+class Message(object):
+    def __init__(self, endpoint, msg, headers):
+        self.endpoint = endpoint
+        self.event_msg = msg
+        self.headers = headers
+
+    def send_message(self):
+        requests.post(self.endpoint, json=self.event_msg, headers=self.headers)
+        logger.info('%s - %s - %s', self.event_msg['uuid'], self.event_msg['time'], self.event_msg['name'])
+
 class JunosCollector(object):
     def __init__(self, config_path):
         """Collector module for Junos RPC information, statistics and status
@@ -31,14 +42,26 @@ class JunosCollector(object):
         self.network_devices = {}
         self.broken_devices = {}
         self.db_event_endpoint = '{}:{}/create_event'.format(DATABASE_URL, DATABASE_PORT)
+        self.requests_queue = JoinableQueue(maxsize=0)
         self._import_network_devices(config_path)
         self.start_monitoring()
+
+    def empty_requests(self):
+        """Checks for any outgoing events destined for the database and sends them"""
+        while True:
+            request = self.requests_queue.get()
+            request.send_message()
+            self.requests_queue.task_done()
 
     def start_monitoring(self):
         """Monitoring loop which collects information from each device
         for a specified interval
         """
         interval = 10  # seconds
+
+        t_queue = threading.Thread(target=self.empty_requests)
+        t_queue.start()
+
         while True:
             threads = []
             start_time = time.time()
@@ -59,6 +82,7 @@ class JunosCollector(object):
 
             for thread in threads:
                 thread.join()
+
             end_time = time.time()
             duration = end_time - start_time
 
@@ -66,6 +90,8 @@ class JunosCollector(object):
             if sleep_duration < 0:
                 sleep_duration = 0
             time.sleep(sleep_duration)
+
+        t_queue.join()
 
     def t_interface_statuses(self):
         # Interface Status
@@ -104,7 +130,8 @@ class JunosCollector(object):
         headers = {
             'Content-Type': 'application/json',
         }
-        requests.post(self.db_event_endpoint, json=event_msg, headers=headers)
+        # requests.post(self.db_event_endpoint, json=event_msg, headers=headers)
+        self.requests_queue.put(Message(self.db_event_endpoint, event_msg, headers))
 
     def _import_network_devices(self, network_device_file):
         """Import the hostnames, username and password for each network device
@@ -133,13 +160,13 @@ class JunosCollector(object):
         """
         try:
             logger.debug('Connecting to %s', device['ip'])
-            dev = Device(host=device['ip'], user=device['user'], password=device['password'], attempts=3, auto_probe=5)
+            dev = Device(host=device['ip'], user=device['user'], password=device['password'], attempts=1, timeout=1)
             dev.open()
             logger.info('Successfully connected to %s', device['ip'])
         except (ConnectError, RpcError) as e:
             logger.error('%s', str(e))
             self.broken_devices[device['name']] = dev
-        finally:
+        else:
             self.connected_devices[device['name']] = dev
 
     def _create_event(self, name, type, priority, body):
@@ -170,7 +197,8 @@ class JunosCollector(object):
         for dev_name, dev in self.broken_devices.items():
             try:
                 dev.open()
-                self.broken_devices.pop(dev_name)
+                dev = self.broken_devices.pop(dev_name)
+                self.connected_devices[dev_name] = dev
                 self.send_connection_error(True, dev_name, 'Reconnected to device {}'.format(dev_name))
             except Exception as e:
                 logger.error(e)
@@ -183,14 +211,12 @@ class JunosCollector(object):
                                         priority='information',
                                         body={'Information': str(msg)})
             self.add_event_to_db(event)
-            logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
         else:
             event = self._create_event(name='connection.down.{}'.format(device_name),
                                         type='connection',
                                         priority='critical',
                                         body={'error': str(msg)})
             self.add_event_to_db(event)
-            logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
     def get_interface_status(self):
         device_interface_statuses = {}
@@ -203,7 +229,7 @@ class JunosCollector(object):
             try:
                 rpc_reply = connected_dev.rpc.get_interface_information(terse=True)
             except (ConnectError, RpcError) as e:
-                self.broken_devices[dev_name] = connected_dev
+                self.safely_set_device_broken(dev_name)
             else:
                 rpc_replies[dev_name] = rpc_reply
 
@@ -230,6 +256,7 @@ class JunosCollector(object):
         device_bgp_peer_count = {}
         rpc_replies = {}
         to_monitor = ['P1', 'P2', 'P3']
+
         for dev_name, connected_dev in self.connected_devices.items():
             if connected_dev is None:
                 continue
@@ -239,7 +266,7 @@ class JunosCollector(object):
             try:
                 rpc_reply = connected_dev.rpc.get_bgp_summary_information()
             except (ConnectError, RpcError) as e:
-                self.broken_devices[dev_name] = connected_dev
+                self.safely_set_device_broken(dev_name)
             else:
                 rpc_replies[dev_name] = rpc_reply
 
@@ -261,6 +288,23 @@ class JunosCollector(object):
 
         return device_bgp_peer_count
 
+    def safely_set_device_broken(self, dev_name):
+        """Removes the device from the list of connected devices
+        and places it into the broken device list.
+
+        This also handles the conflict of the devices already being removed
+        during multithreading.
+
+        :param dev_name: Name of the device
+        :type dev_name: str
+        """
+        try:
+            dev = self.connected_devices.pop(dev_name)
+            self.broken_devices[dev_name] = dev
+        except KeyError:
+            # Probably already removed in another thread
+            pass
+
     def get_ldp_session(self):
         ldp_neighbors = {}
         rpc_replies = {}
@@ -274,7 +318,7 @@ class JunosCollector(object):
             try:
                 rpc_reply = connected_dev.rpc.get_ldp_session_information()
             except (ConnectError, RpcError) as e:
-                self.broken_devices[dev_name] = connected_dev
+                self.safely_set_device_broken(dev_name)
             else:
                 rpc_replies[dev_name] = rpc_reply
 
@@ -306,7 +350,7 @@ class JunosCollector(object):
             try:
                 rpc_reply = connected_dev.rpc.get_ospf_neighbor_information()
             except (ConnectError, RpcError) as e:
-                self.broken_devices[dev_name] = connected_dev
+                self.safely_set_device_broken(dev_name)
             else:
                 rpc_replies[dev_name] = rpc_reply
 
@@ -346,7 +390,7 @@ class JunosCollector(object):
             try:
                 rpc_reply = connected_dev.rpc.get_ospf_interface_information()
             except (ConnectError, RpcError) as e:
-                self.broken_devices[dev_name] = connected_dev
+                self.safely_set_device_broken(dev_name)
             else:
                 rpc_replies[dev_name] = rpc_reply
 
@@ -385,7 +429,7 @@ class JunosCollector(object):
             try:
                 rpc_reply = connected_dev.rpc.get_path_computation_client_status()
             except (ConnectError, RpcError) as e:
-                self.broken_devices[dev_name] = connected_dev
+                self.safely_set_device_broken(dev_name)
             else:
                 rpc_replies[dev_name] = rpc_reply
 
@@ -418,14 +462,12 @@ class JunosCollector(object):
                                            priority='critical',
                                            body={device_name: interfaces})
                 self.add_event_to_db(event)
-                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
             else:
                 event = self._create_event(name='oper_status.interface.up.{}'.format(device_name),
                                            type='cli',
                                            priority='information',
                                            body={device_name: interfaces})
                 self.add_event_to_db(event)
-                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
     def monitor_admin_status(self, interface_status):
         for device_name, interfaces in interface_status.items():
@@ -441,14 +483,12 @@ class JunosCollector(object):
                                            priority='critical',
                                            body={device_name: interfaces})
                 self.add_event_to_db(event)
-                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
             else:
                 event = self._create_event(name='admin_status.interface.up.{}'.format(device_name),
                                            type='cli',
                                            priority='information',
                                            body={device_name: interfaces})
                 self.add_event_to_db(event)
-                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
     def monitor_bgp_peers(self, bgp_peer_count):
         for device_name, bgp_peer_count in bgp_peer_count.items():
@@ -461,7 +501,6 @@ class JunosCollector(object):
                                                 'down-peer-count': bgp_peer_count['down-peer-count'],
                                            }})
                 self.add_event_to_db(event)
-                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
             else:
                 event = self._create_event(name='bgp.peers.down.{}'.format(device_name),
                                            type='cli',
@@ -471,7 +510,6 @@ class JunosCollector(object):
                                                 'down-peer-count': bgp_peer_count['down-peer-count'],
                                            }})
                 self.add_event_to_db(event)
-                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
     def monitor_ldp_session(self, ldp_neighbors):
         for device_name, ldp_neighbor in ldp_neighbors.items():
@@ -481,14 +519,12 @@ class JunosCollector(object):
                                            priority='information',
                                            body={device_name: ldp_neighbor})
                 self.add_event_to_db(event)
-                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
             else:
                 event = self._create_event(name='ldp.session.down.{}'.format(device_name),
                                            type='cli',
                                            priority='critical',
                                            body={device_name: ldp_neighbor})
                 self.add_event_to_db(event)
-                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
     def monitor_ospf_neighbors(self, ospf_neighbors):
         for device_name, ospf_neighbor in ospf_neighbors.items():
@@ -498,14 +534,12 @@ class JunosCollector(object):
                                            priority='information',
                                            body={device_name: ospf_neighbor})
                 self.add_event_to_db(event)
-                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
             else:
                 event = self._create_event(name='ospf.neighbors.down.{}'.format(device_name),
                                            type='cli',
                                            priority='critical',
                                            body={device_name: ospf_neighbor})
                 self.add_event_to_db(event)
-                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
     def monitor_pcep_statuses(self, pcep_statuses):
         for device_name, pcep_status in pcep_statuses.items():
@@ -521,14 +555,12 @@ class JunosCollector(object):
                                            priority='information',
                                            body={device_name: pcep_status})
                 self.add_event_to_db(event)
-                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
             else:
                 event = self._create_event(name='pcep.status.down.{}'.format(device_name),
                                            type='cli',
                                            priority='critical',
                                            body={device_name: pcep_status})
                 self.add_event_to_db(event)
-                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
     def monitor_ospf_interfaces(self, d_ospf_interfaces):
         for device_name, ospf_interfaces in d_ospf_interfaces.items():
@@ -544,15 +576,13 @@ class JunosCollector(object):
                                            priority='information',
                                            body={device_name: ospf_interfaces})
                 self.add_event_to_db(event)
-                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
             else:
                 event = self._create_event(name='ospf.interfaces.down.{}'.format(device_name),
                                            type='cli',
                                            priority='critical',
                                            body={device_name: ospf_interfaces})
                 self.add_event_to_db(event)
-                logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
 
 if __name__ == '__main__':
-    jc = JunosCollector(device_config='../config/devices.yaml')
+    jc = JunosCollector(config_path='../config/devices.yaml')
