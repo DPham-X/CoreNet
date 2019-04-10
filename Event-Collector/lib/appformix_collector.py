@@ -1,7 +1,9 @@
+import json
+import logging
 import uuid
 from datetime import datetime
+
 import requests
-import logging
 
 # Constants
 DATABASE_URL = 'http://0.0.0.0'
@@ -48,6 +50,7 @@ class AppformixCollector(object):
         r = requests.request('POST', self.db_event_endpoint, json=event, headers=headers)
         if r.status_code != 201:
             logger.error('Coud not add the AppFormix event to the database. %s', r.status_code)
+        logger.info('%s - %s - %s', event['uuid'], event['time'], event['name'])
 
     def _create_event(self, name, time, type, priority, body):
         """Generates a Database compatible Event object
@@ -65,6 +68,6 @@ class AppformixCollector(object):
             'name': name,
             'type': type,
             'priority': priority,
-            'body': body,
+            'body': json.dumps(body),
         }
         return event
