@@ -68,6 +68,8 @@ class NorthstarTrigger(object):
         :rtype: int
         """
         for node in nodes:
+            if 'hostName' not in node.keys():
+                continue
             if node['hostName'] == name:
                 return node['nodeIndex']
         return None
@@ -95,9 +97,6 @@ class NorthstarTrigger(object):
             topology_information = r.json()
         except IndexError as e:
             raise ConnectionError('Could not get NorthStar topology elements. {}'.format(e))
-
-        logger.debug('Received the following nodes:')
-        logger.debug([node['hostName'] for node in topology_information])
 
         return topology_information
 
@@ -137,6 +136,8 @@ class NorthstarTrigger(object):
         :type event_name: str
         :param index: Index of the network device as found in the network node list
         :type index: int
+        :returns output and status
+        :type returns: str, bool
         """
         self._get_token()
         maintenance_url = self.base_url + '/NorthStar/API/v2/tenant/1/topology/1/maintenances'
@@ -159,14 +160,17 @@ class NorthstarTrigger(object):
         existing_maintenances = self.get_maintenance_list()
         maintenances_name = [m['name'] for m in existing_maintenances]
         if event_name in maintenances_name:
-            logger.info('Maintenance name already in use {}... skipping'.format(event_name))
-            return
+            output ='Maintenance name already in use {}... skipping'.format(event_name)
+            logger.info(output)
+            return output, True
 
         logger.debug('Putting device into maintenance')
         logger.debug('Posting to: {}'.format(maintenance_url))
         r = requests.post(maintenance_url, json=body, headers=headers, verify=self.verify)
-        assert r.status_code == 201, r.status_code
+        if r.status_code != 201:
+            return r.json(), False
         logger.info('Successfully created maintenance event, Name:{} Start:{} End:{}'.format(event_name, start_time, end_time))
+        return r.json(), True
 
     def get_maintenance_list(self):
         """Retrieves all the maintenances from the NorthStar API
@@ -236,14 +240,15 @@ class NorthstarTrigger(object):
 
         logger.debug('Triggering path optimisation')
         try:
-            r = requests.request('POST', path_optimisation_url, data='', hesaders=headers, verify=self.verify)
+            r = requests.request('POST', path_optimisation_url, data='', headers=headers, verify=self.verify)
             response = r.json()
             assert r.status_code == 200, r.status_code
         except AssertionError:
             # Northstar triggers that have already happened are still considered successful
-            if 'ignored' in response:
-                return response, True
             if response:
+                if 'error' in response:
+                    if 'ignored' in response['error']:
+                        return response, True
                 return response, False
             return {'Error': 'Could not trigger path optimisation, {}'.format(r.status_code)}, False
         logger.info(response['result '])
@@ -261,9 +266,15 @@ class NorthstarTrigger(object):
         """
         topology_info = self.get_topology_elements()
         index = self._node_id_from_name(router_name, topology_info)
+        if not isinstance(index, int):
+            output = 'Could not find device \'{}\''.format(router_name)
+            logger.error(output)
+            return output, False
         logger.debug('Creating new maintenance for \'{}\''.format(router_name))
-        self.create_new_maintenance(event_name, index)
-        return 'Creating new maintenance for \'{}\''.format(router_name), True
+        output, status = self.create_new_maintenance(event_name, index)
+        if status is False:
+            return output, False
+        return 'Created new maintenance for \'{}\'.\n{}'.format(router_name, output), True
 
     def delete_maintenance(self, event_name):
         """Deletes a maintenance from NorthStar by setting it to 'cancelled' first

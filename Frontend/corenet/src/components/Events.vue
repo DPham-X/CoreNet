@@ -71,6 +71,9 @@
 <script>
 import axios from 'axios'
 import yaml from 'js-yaml'
+
+import { host } from '../variable.js'
+
 export default {
   name: 'Events',
   oldEvents: '',
@@ -110,7 +113,7 @@ export default {
         },
         {
           key: 'body',
-          label: 'Details',
+          label: 'Details'
         }
       ],
       totalRows: 50,
@@ -127,7 +130,7 @@ export default {
       if (this.status === false) {
         return
       }
-      const link = 'http://0.0.0.0:5000/'
+      const link = host
       const apiLink = link + 'get_events_last'
 
       axios

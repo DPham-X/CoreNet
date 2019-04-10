@@ -2,7 +2,6 @@
   <div id="app" class="bg">
     <app-navbar></app-navbar>
     <div class="pad"></div>
-    <img src="./assets/logo.png">
     <router-view/>
   </div>
 </template>

@@ -52,7 +52,7 @@
           </span>
         </b-table>
 
-        <b-modal id="cmdModal" title="Executed command output" size="xl" class="font-black" style="overflow-x:auto; max-width: 100vh">
+        <b-modal id="cmdModal" title="Executed command output" size="xl" class="font-black" scrollable=true style="overflow-x:auto; max-width: 100vh">
           <div class="font-monospace" v-html="commandOutput"></div>
         </b-modal>
 
@@ -74,6 +74,8 @@
 <script>
 import axios from 'axios'
 import yaml from 'js-yaml'
+
+import { host } from '../variable.js'
 
 export default {
   name: 'Executions',
@@ -130,7 +132,7 @@ export default {
       if (this.status === false) {
         return
       }
-      const link = 'http://0.0.0.0:5000/'
+      const link = host
       const apiLink = link + 'get_executions_last'
 
       axios

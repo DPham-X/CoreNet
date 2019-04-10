@@ -100,8 +100,8 @@ class ExecuteCommands(Resource):
             except Exception as e:
                 logger.error('An error occurred %s', e)
                 status_message = 'Failed'
-                python_commands[i]['output'] = 'An error occured'
-                break
+                python_commands[i]['output'] = 'An error occured.\n {}'.format(str(e))
+                continue
             else:
                 python_commands[i]['output'] = str(output)
                 if not output or status is False :
