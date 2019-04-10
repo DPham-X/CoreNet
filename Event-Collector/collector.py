@@ -33,6 +33,10 @@ jc_logger = logging.getLogger('lib.junos_collector')
 jc_logger.setLevel(logging.DEBUG)
 jc_logger.addHandler(handler)
 
+ac_logger = logging.getLogger('lib.appformix_collector')
+ac_logger.setLevel(logging.DEBUG)
+ac_logger.addHandler(handler)
+
 # Init modules
 ac = AppformixCollector()
 
