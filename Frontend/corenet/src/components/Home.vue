@@ -85,7 +85,7 @@
               <li v-if="recentEvents.length == 0" class="list-group-item description borderless2 corner left">No Critical Events found.</li>
               <li v-for="(events, index) in recentEvents" :key="`events-${index}`">
                   <div class="list-group-item description borderless corner left">{{ convertIsoDate(events.time) }}</div>
-                  <div class="list-group-item description borderless corner right">{{ events.name }}</div>
+                  <div class="list-group-item description borderless corner right" style="font-size: 12px;">{{ events.name }}</div>
               </li>
             </ul>
           </b-card-text>
@@ -335,7 +335,7 @@ a {
   border-right: 0 none;
 }
 .card {
-  min-width: 500px;
+  min-width: 520px;
   min-height: 400px;
   height: auto;
 }
