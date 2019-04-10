@@ -13,7 +13,7 @@ NC='\033[0m'
 # . ./venv/bin/activate
 echo "${GREEN}Starting Database...${NC}"
 cd Database
-nohup gunicorn --workers=12 --bind 0.0.0.0:5000 --preload db_core:app &
+nohup gunicorn --workers=13 --threads=13 --bind 0.0.0.0:5000 --preload db_core:app &
 cd ..
 echo "${YELLOW}Sleeping for 30 seconds ...${NC}"
 sleep 30s
