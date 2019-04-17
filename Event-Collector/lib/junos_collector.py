@@ -16,6 +16,7 @@ from jnpr.junos.exception import ConnectError, RpcError
 # Constants
 DATABASE_URL = 'http://0.0.0.0'
 DATABASE_PORT = 5000
+COLLECTION_INTERVAL = 60 # seconds
 
 # Logging
 logger = logging.getLogger(__name__)
@@ -51,14 +52,12 @@ class JunosCollector(object):
         while True:
             request = self.requests_queue.get()
             request.send_message()
-            self.requests_queue.task_done()
+            #self.requests_queue.task_done()
 
     def start_monitoring(self):
         """Monitoring loop which collects information from each device
         for a specified interval
         """
-        interval = 10  # seconds
-
         t_queue = threading.Thread(target=self.empty_requests)
         t_queue.start()
 
@@ -86,7 +85,7 @@ class JunosCollector(object):
             end_time = time.time()
             duration = end_time - start_time
 
-            sleep_duration = interval - int(duration)
+            sleep_duration = COLLECTION_INTERVAL - int(duration)
             if sleep_duration < 0:
                 sleep_duration = 0
             time.sleep(sleep_duration)
@@ -130,8 +129,8 @@ class JunosCollector(object):
         headers = {
             'Content-Type': 'application/json',
         }
-        # requests.post(self.db_event_endpoint, json=event_msg, headers=headers)
-        self.requests_queue.put(Message(self.db_event_endpoint, event_msg, headers))
+        requests.post(self.db_event_endpoint, json=event_msg, headers=headers)
+        # self.requests_queue.put(Message(self.db_event_endpoint, event_msg, headers))
 
     def _import_network_devices(self, network_device_file):
         """Import the hostnames, username and password for each network device
