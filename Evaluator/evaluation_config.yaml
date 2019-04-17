@@ -952,3 +952,67 @@
     - type: cli
       cmd: show configuration protocols pcep
       args: PE4
+
+# Test
+- name: P1 Packet Drop
+  events:
+    - interface.error.P1
+  commands:
+    - type: northstar
+      cmd: create.device.maintenance
+      args: P1
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: P1 Packet Drop Timeout
+  events:
+  commands:
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: P1
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: P2 Packet Drop
+  events:
+    - interface.error.P2
+  commands:
+    - type: northstar
+      cmd: create.device.maintenance
+      args: P2
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: P2 Packet Drop Timeout
+  events:
+  commands:
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: P2
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: P3 Packet Drop
+  events:
+    - interface.error.P3
+  commands:
+    - type: northstar
+      cmd: create.device.maintenance
+      args: P3
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None
+
+- name: P3 Packet Drop Timeout
+  events:
+  commands:
+    - type: northstar
+      cmd: delete.device.maintenance
+      args: P3
+    - type: northstar
+      cmd: trigger.optimisation
+      args: None

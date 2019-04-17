@@ -78,3 +78,15 @@
 - 1: PE4 PCEP Status Up
   2: PE4 PCEP Status Down
   default: 1
+
+- 1: P1 Packet Drop
+  2: P1 Packet Drop Timeout
+  timeout: 180
+
+- 1: P2 Packet Drop
+  2: P2 Packet Drop Timeout
+  timeout: 180
+
+- 1: P3 Packet Drop
+  2: P3 Packet Drop Timeout
+  timeout: 180
