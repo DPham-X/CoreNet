@@ -8,6 +8,14 @@ In modern society, telecommunications networks are still being operated manually
 
 At a high-level we have implemented a microservices architecture for the main controller platform. The microservices architecture involves separating each function of the platform into their self-contained modules. For the modules to interact with each other, each module can utilise another modules’ RESTful API endpoint to send and receive data. The advantages of a microservices architecture compared to alternative architectures such as the classic monolithic architecture is that microservices can be scaled as needed. The underlying framework which is used to make the microservice is Flask, which is a micro web framework for building a web application.
 
+Our platform is made of 5 microservices that are responsible for their own respective tasks. In a typical web application, the Collector, Database, Evaluator and Executor can be considered the “backend” which controls all logic of the platform and the Web UI is the “frontend” as it visualises the environment for the user.
+
+- Collector: Responsible for monitoring all the data on the current state of every network device,
+- Database: Handles the archiving of all data that is collected or processed for future use.
+- Evaluator: Pulls data from the storage service and determines if any actions need to be taken.
+- Executor: Called upon by the evaluation service for carrying any required actions to remediate the network.
+- Web UI: Web interface for which the end user can monitor the status of the self-driving network
+
 ![Screenshot](images/architecture.png)
 
 ## Network
@@ -17,6 +25,8 @@ To test our Self-diving platform, we have simulated a network topology that migh
 ![Screenshot](images/network_topology.png)
 
 ## Frontend
+
+To complement the self-driving platform, a Web UI was built to visualise how the platform was behaving and under the current health status of each device. The dashboard was designed to be quite simple using the Vue.js framework as it is easy to get a web page working quickly this is combined with the bootstrap framework which enables a pleasant visual design. Presently the dashboard has 3 pages, the homepage, events and finally the executions page. These were identified as the key points in which it would be nice to view the information. Data is retrieved from using the Database services RESTful API entry-points and loaded onto the page.
 
 ![Screenshot](images/homepage.png)
 
