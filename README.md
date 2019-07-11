@@ -1,5 +1,5 @@
-CoreNet 0.1_alpha
-=================
+CoreNet
+=======
 
 Summary
 -------
